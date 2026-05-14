@@ -1,0 +1,6 @@
+interface:
+  display_name: "Website Replication"
+  short_description: "Audit any reference website for feature parity, safely and with original branding"
+  default_prompt: "Use $website-replication-skill to audit a reference website or web app (competitor, legacy version, partner, or inspiration source) and produce a differentiated parity plan covering UI, interactions, API contracts, data model, architecture, evidence safety, and verification. Choose quick-audit-template.md for ≤1h audits and output-template.md for implementation-ready deliverables."
+policy:
+  allow_implicit_invocation: true

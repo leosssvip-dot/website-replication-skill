@@ -1,0 +1,23 @@
+# Local Claude Code / Codex per-user settings
+.claude/settings.local.json
+.claude/settings.local.*
+.codex/settings.local.*
+
+# Audit output — may contain screenshots, DOM dumps, network traces, or PII
+# Skill writes here by default; never commit real audit evidence.
+audit/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Misc
+.env
+.env.*
