@@ -36,11 +36,11 @@ Without one of these, the skill falls back to static HTML fetch and **every inte
 
 | Tool | Purpose | Install |
 |---|---|---|
-| **Chrome MCP** (`Claude_in_Chrome`) | Click, screenshot, DOM read, network capture in a real Chrome session | Anthropic Chrome extension |
-| **Playwright MCP** | Headless / headed browser automation, multi-browser | `npx @playwright/mcp` |
-| **Claude Preview** (`Claude_Preview`) | Sandboxed preview environment with click / eval / screenshot / network | Built into Claude Code |
+| **Chrome MCP** (`Claude_in_Chrome`) | Click, screenshot, DOM read, network capture in a real Chrome session | Configure per the Claude-in-Chrome project's published setup steps |
+| **Playwright MCP** | Headless / headed browser automation, multi-browser | Microsoft Playwright MCP — install per [microsoft/playwright-mcp](https://github.com/microsoft/playwright-mcp) |
+| **Claude Preview** (`Claude_Preview`) | Sandboxed preview environment with click / eval / screenshot / network | MCP server provided with Claude Code; enable in MCP settings |
 
-#### Recommended (optional but improve coverage)
+#### Recommended (optional, improves coverage)
 
 | Tool | Purpose |
 |---|---|
@@ -135,7 +135,7 @@ This is the single most important contract of the skill: do not let the agent si
 
 Pull requests welcome, especially:
 
-- New product-category data-model examples for [output-template.md §7](references/output-template.md).
+- New product-category data-model examples for [output-template.md §7 Data Model](references/output-template.md#7-data-model).
 - Real (fully redacted) sample audits under `examples/`.
 - Translations of SKILL.md / templates.
 
@@ -183,9 +183,9 @@ skill 强制执行**证据脱敏**：cookies、auth headers、tokens、客户数
 
 | 工具 | 用途 | 安装 |
 |---|---|---|
-| **Chrome MCP**（`Claude_in_Chrome`） | 在真实 Chrome 会话里点击、截图、读取 DOM、抓网络请求 | Anthropic Chrome 扩展 |
-| **Playwright MCP** | Headless / headed 浏览器自动化，多浏览器 | `npx @playwright/mcp` |
-| **Claude Preview**（`Claude_Preview`） | 沙箱预览环境，支持 click / eval / screenshot / network | Claude Code 内置 |
+| **Chrome MCP**（`Claude_in_Chrome`） | 在真实 Chrome 会话里点击、截图、读取 DOM、抓网络请求 | 按 Claude-in-Chrome 项目官方说明配置 |
+| **Playwright MCP** | Headless / headed 浏览器自动化，多浏览器 | 微软官方 Playwright MCP，按 [microsoft/playwright-mcp](https://github.com/microsoft/playwright-mcp) 说明安装 |
+| **Claude Preview**（`Claude_Preview`） | 沙箱预览环境，支持 click / eval / screenshot / network | Claude Code 附带的 MCP server，在 MCP 设置里启用 |
 
 #### 推荐依赖（可选，覆盖更全）
 
@@ -282,7 +282,7 @@ git clone <your-fork-url> ~/.codex/skills/website-replication-skill
 
 欢迎 PR，尤其是：
 
-- 给 [output-template.md §7](references/output-template.md) 补新品类的数据模型样例。
+- 给 [output-template.md §7 Data Model](references/output-template.md#7-data-model) 补新品类的数据模型样例。
 - 在 `examples/` 下提交**完全脱敏**的真实审计样例。
 - SKILL.md / 模板的多语言翻译。
 
