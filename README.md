@@ -78,8 +78,11 @@ website-replication-skill/
 
 ```bash
 mkdir -p ~/.claude/skills
-git clone <your-fork-url> ~/.claude/skills/website-replication-skill
+git clone https://github.com/leosssvip-dot/website-replication-skill.git \
+  ~/.claude/skills/website-replication-skill
 ```
+
+> Prefer to customize? Fork the repo and substitute your fork's URL.
 
 Trigger by asking Claude something like "audit this site and produce a parity plan", or invoke explicitly via the skill picker.
 
@@ -87,8 +90,11 @@ Trigger by asking Claude something like "audit this site and produce a parity pl
 
 ```bash
 mkdir -p ~/.codex/skills
-git clone <your-fork-url> ~/.codex/skills/website-replication-skill
+git clone https://github.com/leosssvip-dot/website-replication-skill.git \
+  ~/.codex/skills/website-replication-skill
 ```
+
+> Prefer to customize? Fork the repo and substitute your fork's URL.
 
 In Codex CLI / IDE, type `$website-replication-skill` to invoke explicitly. Implicit invocation is enabled via `agents/openai.yaml`.
 
@@ -225,8 +231,11 @@ website-replication-skill/
 
 ```bash
 mkdir -p ~/.claude/skills
-git clone <your-fork-url> ~/.claude/skills/website-replication-skill
+git clone https://github.com/leosssvip-dot/website-replication-skill.git \
+  ~/.claude/skills/website-replication-skill
 ```
+
+> 想自定义？fork 后用你自己仓库的 URL 替换上面的地址即可。
 
 之后向 Claude 说"audit 这个网站，产出 parity plan"之类的话即可触发；也可在 skill picker 中显式调用。
 
@@ -234,8 +243,11 @@ git clone <your-fork-url> ~/.claude/skills/website-replication-skill
 
 ```bash
 mkdir -p ~/.codex/skills
-git clone <your-fork-url> ~/.codex/skills/website-replication-skill
+git clone https://github.com/leosssvip-dot/website-replication-skill.git \
+  ~/.codex/skills/website-replication-skill
 ```
+
+> 想自定义？fork 后用你自己仓库的 URL 替换上面的地址即可。
 
 在 Codex CLI / IDE 输入 `$website-replication-skill` 显式调用。隐式调用由 `agents/openai.yaml` 启用。
 
