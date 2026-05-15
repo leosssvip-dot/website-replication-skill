@@ -23,7 +23,29 @@ Replicate useful product behavior, not protected expression. Do not copy logos, 
 - Redact secrets and personal data before saving or reporting evidence: cookies, authorization headers, session IDs, tokens, account identifiers, customer data, uploaded file contents, message/prompt contents that may contain private data, and one-time URLs.
 - For network traces, record method, route pattern, auth class, redacted payload shape, response shape, status code, and error class. Do not paste raw credential-bearing headers or full private payloads.
 - Respect access boundaries. If a state requires paid or authenticated access that is unavailable, mark it as blocked and infer only from visible evidence or official docs.
-- The default `.gitignore` tracks PNG screenshots and `MANIFEST.md` so the snapshot cache is shareable across machines; it ignores DOM dumps, network traces, reports, and other high-risk file types. Review every screenshot for visible PII (usernames, emails, customer content, internal IDs) before committing. To lock the directory down entirely, replace the audit block in `.gitignore` with a single `audit/` line.
+- Audit output lives in the **consumer project** (wherever the skill is invoked), not in the skill repo. Add the following block to that project's `.gitignore` so the snapshot cache survives across machines while high-risk evidence stays local:
+
+  ```gitignore
+  # Audit output written by website-replication-skill.
+  # Tracks PNG screenshots and MANIFEST.md (the cross-audit snapshot index);
+  # ignores DOM dumps, network traces, reports, and other high-risk types.
+  # IMPORTANT: review every PNG for visible PII (usernames, emails, customer
+  # content, internal IDs) BEFORE committing.
+  # To lock the directory down entirely, replace this whole block with: audit/
+  audit/**/*.html
+  audit/**/*.htm
+  audit/**/*.har
+  audit/**/*.har.gz
+  audit/**/*.json
+  audit/**/*.txt
+  audit/**/*.log
+  audit/**/*.csv
+  audit/**/network/
+  audit/**/dom/
+  audit/**/reports/
+  ```
+
+  If the consumer project is public, or you cannot guarantee PNG redaction, prefer the conservative `audit/` line instead.
 
 ## Required Inputs
 

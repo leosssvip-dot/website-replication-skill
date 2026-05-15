@@ -3,32 +3,10 @@
 .claude/settings.local.*
 .codex/settings.local.*
 
-# Audit output — selectively tracked.
-#
-# Tracked:   PNG screenshots and MANIFEST.md — lets the snapshot cache survive
-#            across machines and be shared with teammates.
-# Ignored:   DOM dumps, network traces, raw reports, and other high-risk file
-#            types — they routinely contain PII, auth headers, customer data,
-#            or synthesized sensitive summaries even after best-effort
-#            redaction.
-#
-# IMPORTANT: review every PNG for visible PII (usernames, emails, customer
-#            content, internal IDs) BEFORE committing. See the Evidence Safety
-#            section in SKILL.md.
-#
-# To lock the entire directory down (most conservative for privacy), replace
-# the block below with a single line: `audit/`
-audit/**/*.html
-audit/**/*.htm
-audit/**/*.har
-audit/**/*.har.gz
-audit/**/*.json
-audit/**/*.txt
-audit/**/*.log
-audit/**/*.csv
-audit/**/network/
-audit/**/dom/
-audit/**/reports/
+# Audit output — never tracked in the skill repo itself (the skill is shipped
+# here, audits run elsewhere). For the recommended .gitignore policy in the
+# consumer project that hosts real audit output, see SKILL.md.
+audit/
 
 # OS
 .DS_Store
