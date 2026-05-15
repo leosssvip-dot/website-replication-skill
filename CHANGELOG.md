@@ -11,6 +11,21 @@ Planned for the next milestones — not yet implemented:
 - Add a third `Probed` state for "observed by URL / static attribute, not clicked" — surfaced during the Gemini sample run; current `✓ / ✗` collapses two distinct cases.
 - A second real audit on a fully public site (no auth gating) to complement the Gemini anonymous-tier sample, demonstrating 100% coverage.
 
+## [0.2.0] — 2026-05-15
+
+### Added
+
+- **`references/dom-distill.js`** — paste-ready DOM structural distiller. Produces a markdown nested-list outline of the visible page (structure + key attributes + truncated text) while dropping framework boilerplate (`<script>` / `<style>` / SVG primitives), collapsing single-child wrapper divs, and stripping noisy attributes (`class`, `jsname`, framework-specific data-*). Aim: 50–100× smaller than raw `outerHTML`. Use when the browser MCP has no built-in accessibility-tree tool, or when text content matters alongside structure. Side-effect-free.
+- **Token Budget section** in SKILL.md (and Chinese mirror) — explicit ordered list of bloat sources, a hard rule ("any single tool output > 50KB must be written to a file"), and what's already enforced by the skill's own scripts (`dom-enumeration.js` limit=500, `dom-distill.js` maxNodes=2000 + multi-axis truncation).
+
+### Changed
+
+- **SKILL.md step 1** (and Chinese mirror) — DOM-snapshot guidance is now explicit and prioritized: (a) MCP-native a11y snapshot, (b) `dom-distill.js`, (c) raw `outerHTML` only if neither is reachable and file-only. Direct `evaluate(outerHTML)` into context is now explicitly forbidden.
+
+### Notes
+
+- This is a MINOR bump per the CHANGELOG's own SemVer convention — new template / configurable surface, no breaking workflow contract change.
+
 ## [0.1.1] — 2026-05-15
 
 ### Added

@@ -1,6 +1,6 @@
 ---
 name: website-replication-skill
-version: 0.1.1
+version: 0.2.0
 description: Audit a reference website or web app and produce a differentiated parity plan covering UI, interactions, API contracts, data model, and architecture. Use when benchmarking a competitor, replicating a legacy or partner site, matching product capabilities, reproducing workflow behavior with original branding, or auditing missing UI/function/API details.
 ---
 
@@ -99,7 +99,7 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - List every competitor page, route, tab, mode, drawer, modal, and post-submit state in scope.
    - **Read `audit/<site-slug>/MANIFEST.md` first** (format: [references/manifest-template.md](references/manifest-template.md)). For each in-scope URL × viewport × auth-state, look up the row. Cache hit (entry exists, `Last Captured` within the cache window — default 30 days, see *Configuration*) → reuse the stored snapshot + DOM, tag the evidence row `observed (cached from <date>)`, do not re-capture. Cache miss or stale → capture fresh and append / update the manifest row. Create `MANIFEST.md` with the template header if it does not exist yet.
    - Capture desktop and mobile screenshots only for URLs that missed the cache. Prefer full-page screenshots plus focused component screenshots.
-   - Save redacted evidence: DOM text, control inventories (buttons / inputs / links), network calls, console errors, screenshots. Network traces are always fresh — never reused, never read from old dates.
+   - Save redacted evidence: screenshots, control inventories (buttons / inputs / links), network calls, console errors, and a **structural DOM snapshot**. For the DOM snapshot pick *one* of: (a) the browser-MCP's built-in accessibility-tree tool (e.g. `take_snapshot` on chrome-devtools-mcp) when available; (b) [references/dom-distill.js](references/dom-distill.js) — a paste-ready script that emits a markdown outline 50–100× smaller than raw `outerHTML`, with framework noise stripped; (c) raw `outerHTML` only if neither is reachable, saved to file and never reloaded into context. Never `evaluate` `document.documentElement.outerHTML` directly into the agent's context — that's the single largest token-cost vector this skill warns about. Network traces are always fresh — never reused, never read from old dates.
    - If the page is dynamic, inspect after interaction, not just the initial render.
    - Track each claim as `observed`, `documented`, `inferred`, `blocked`, or `not applicable`. Cached evidence stays `observed` — the 30-day window is the reliability budget.
 
@@ -193,6 +193,26 @@ Defaults are tuned for the common case. The user may override any in their reque
 | Coverage below 90% with no `blocked` reason | Step 3 was skipped or rushed | Return to step 3 against the unfilled IDs; do not submit the deliverable yet. |
 | Reflection round (step 7) produces no concrete misses | Agent saturated on existing report content | Use [references/parity-checklist.md](references/parity-checklist.md) "Hidden States And Coverage" — pick the first three items still unticked. |
 | Screenshots tracked into git accidentally show PII | Reviewer skipped the redaction pass | Untrack with `git rm --cached <path>`, sanitize, re-commit. See *Evidence Safety*. Long-term: switch the consumer project's `.gitignore` block to the single `audit/` line. |
+
+## Token Budget
+
+A full audit's tool outputs share the agent's context window. Per-call costs that look small can compound when an audit spans many pages or many state changes. Honest order of impact:
+
+| Worst → best to watch | What it looks like | Mitigation |
+| --- | --- | --- |
+| 1. Raw `outerHTML` via `evaluate` | one call returns 200KB – 5MB of HTML | Forbidden — save to file, reference path, never load whole HTML into context |
+| 2. `get_page_text` / raw-text extraction on long pages | docs / Terms / changelog returns 50–200KB | Prefer the browser-MCP a11y snapshot, else run [references/dom-distill.js](references/dom-distill.js) |
+| 3. Inventory blowup on giant lists | 1000+ interactive elements (data tables, kanban) | `dom-enumeration.js` caps at 500 by default; lower to 200 or scope to `rootSelector` of the working region |
+| 4. Re-enumeration without diff | each state change re-emits the full inventory | Append only the *new* rows with a `<!-- After <state> -->` divider; do not repeat ones already recorded |
+| 5. Multi-page audit aggregation | loading 10 inventories back into context | Stream + summarize per page; keep paths and counts, not bodies |
+
+Hard rule: **any single tool output > 50KB must be written to a file and referenced by path**, not held in context.
+
+What's already enforced by the skill's artefacts:
+
+- `dom-enumeration.js`: `limit=500` rows · 60-char label truncation · no `outerHTML`.
+- `dom-distill.js`: `maxNodes=2000` · `maxDepth=10` · drops `<script>` / `<style>` / SVG primitives · collapses wrapper divs · 60-char text truncation · 80-char attribute truncation.
+- Screenshots and DOM dumps live as files; the deliverable references them by path.
 
 ## Output
 

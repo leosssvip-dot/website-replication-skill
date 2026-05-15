@@ -32,7 +32,7 @@
    - 列出所有 in-scope 页面、路由、tab、mode、drawer、modal、submit 后状态。
    - **先读 `audit/<site-slug>/MANIFEST.md`**（格式：[references/manifest-template.md](references/manifest-template.md)）。对每个 URL × viewport × auth 组合查表：命中且 `Last Captured` 在 cache window（默认 30 天）内 → 复用旧 snapshot 与 DOM，evidence 行标 `observed (cached from <date>)`，不重截。未命中或过期 → 新截，写回 manifest。manifest 不存在就用模板头新建。
    - 只对未命中的 URL 截桌面 + 移动端截图。整页截图 + 关键组件特写。
-   - 保存脱敏证据：DOM 文本、控件清单、网络调用、console errors、截图。**网络抓包永远新抓，不复用**。
+   - 保存脱敏证据：截图、控件清单、网络调用、console errors、以及一份**结构化 DOM 快照**。DOM 快照三选一：(a) 浏览器 MCP 自带的 a11y 树工具（chrome-devtools-mcp 的 `take_snapshot` 等）首选；(b) 跑 [references/dom-distill.js](references/dom-distill.js) 产出 markdown 大纲，比原始 outerHTML 小 50-100×，框架噪声已剔除；(c) 实在不行才存 raw `outerHTML`，存盘后**不要再读回 context**。**禁止**直接 `evaluate` `document.documentElement.outerHTML` 进 agent context——这是 skill 警告的最大 token 黑洞。网络抓包**永远新抓，不复用**。
    - 动态页面要在交互后再观察，不能只看首帧。
    - 每个 claim 标 `observed` / `documented` / `inferred` / `blocked` / `not applicable`。复用证据仍是 `observed`（30 天窗口是可靠性预算）。
 
@@ -126,3 +126,24 @@
 | 覆盖率低于 90% 且无 `blocked` 理由 | step 3 被跳过或赶工 | 回 step 3 把空着的 ID 补完；交付物先别发。 |
 | 反思轮（step 7）说不出具体漏什么 | Agent 在现有内容上饱和了 | 用 [references/parity-checklist.md](references/parity-checklist.md) 的"Hidden States And Coverage"段，挑前三个还没勾的项做。 |
 | 截图意外把 PII 进 git | 审脱敏漏了 | `git rm --cached <路径>` 撤掉、脱敏、重新 commit。长期换成单行 `audit/`。 |
+
+## Token Budget（避免 context 爆炸）
+
+完整审计的所有 tool 输出共用 agent context。单次看着小，跨多页面 / 多 state 变化会累积。按影响排：
+
+| 风险（高→低） | 现象 | 处理 |
+| --- | --- | --- |
+| 1. `evaluate` 返 raw `outerHTML` | 单次 200KB–5MB HTML | **禁止**——存盘 + 引路径，绝不进 context |
+| 2. `get_page_text` / 长页 raw 文本 | docs / 条款 / changelog 50–200KB | 优先用浏览器 MCP a11y 快照，否则跑 [references/dom-distill.js](references/dom-distill.js) |
+| 3. 巨型列表 inventory 膨胀 | 1000+ 交互元素（数据表、kanban） | `dom-enumeration.js` 默认 limit=500，必要时降到 200 或 scope 到具体 `rootSelector` |
+| 4. 重枚举不 diff | 每次 state 变化全量重抓 | 用 `<!-- After <state> -->` 分隔只追加**新行**，已记的不复述 |
+| 5. 多页面 audit 汇总 | 把 10 份 inventory 全读回 context | 流式按页处理；只持有路径和计数，不持有内容 |
+
+**硬规则**：单次 tool 输出 > 50KB 必须落盘 + 引路径，不许放进 context。
+
+Skill 本身已强制的保护：
+
+- `dom-enumeration.js`：limit=500 · label 60 字符截断 · 不返 outerHTML
+- `dom-distill.js`：maxNodes=2000 · maxDepth=10 · 剔除 script/style/SVG · 折叠 wrapper div · 文本 60 字符截断 · 属性 80 字符截断
+- 截图与 DOM dump 都是文件产物，交付物只引路径
+
