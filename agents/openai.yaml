@@ -1,5 +1,5 @@
 name: website-replication-skill
-version: 0.1.0
+version: 0.1.1
 interface:
   display_name: "Website Replication"
   short_description: "Audit any reference website for feature parity, safely and with original branding"

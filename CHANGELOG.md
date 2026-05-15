@@ -6,10 +6,24 @@ All notable changes to this skill are recorded here. Versioning follows [SemVer]
 
 Planned for the next milestones — not yet implemented:
 
-- A real (heavily redacted) audit walkthrough in `examples/`, replacing the fictional Acme Tasks sample as the canonical reference.
 - CI: markdown lint + link checker + SKILL.md frontmatter validator on PRs.
 - Migration guide for skill-version bumps when the consumer project has a cached `MANIFEST.md`.
 - Comparison matrix vs. `ui-style-extractor` and similar reference-extraction skills.
+- Add a third `Probed` state for "observed by URL / static attribute, not clicked" — surfaced during the Gemini sample run; current `✓ / ✗` collapses two distinct cases.
+- A second real audit on a fully public site (no auth gating) to complement the Gemini anonymous-tier sample, demonstrating 100% coverage.
+
+## [0.1.1] — 2026-05-15
+
+### Added
+
+- **Real sample audit**: `examples/sample-audit-gemini.md` — full 10-section research-only audit of `https://gemini.google.com/app` anonymous tier, captured live via `chrome-devtools-mcp`. 49 enumerated elements, 95% coverage on meaningful interactive surface, 7 desktop + 1 mobile screenshot, 34-request network capture, all auth-gated state honestly marked `blocked`. Demonstrates the workflow end-to-end against a real high-complexity target.
+- **Required-tooling callout** at top of SKILL.md naming the browser MCPs explicitly (previously only in *Tooling* mid-doc).
+- **Agent-harness-agnostic framing**: README opening + new "Other agent harnesses" install section make explicit that the skill is markdown + JS + YAML, runnable on any harness that loads markdown skills with file + browser tools. Claude Code and Codex are the tested harnesses, not the only ones.
+- **GitHub repo topics**: `claude-code-skill`, `claude-agent-skill`, `openai-codex-skill`, `competitive-analysis`, `web-audit`, `feature-parity`, `browser-automation`, `ui-replication`.
+
+### Notes
+
+- Process feedback from the Gemini run is captured at the end of `sample-audit-gemini.md` and queued in `[Unreleased]` (e.g., needing a third `Probed` state).
 
 ## [0.1.0] — 2026-05-15
 

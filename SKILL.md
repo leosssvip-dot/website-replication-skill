@@ -1,6 +1,6 @@
 ---
 name: website-replication-skill
-version: 0.1.0
+version: 0.1.1
 description: Audit a reference website or web app and produce a differentiated parity plan covering UI, interactions, API contracts, data model, and architecture. Use when benchmarking a competitor, replicating a legacy or partner site, matching product capabilities, reproducing workflow behavior with original branding, or auditing missing UI/function/API details.
 ---
 
