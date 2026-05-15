@@ -1,9 +1,12 @@
 ---
 name: website-replication-skill
+version: 0.1.0
 description: Audit a reference website or web app and produce a differentiated parity plan covering UI, interactions, API contracts, data model, and architecture. Use when benchmarking a competitor, replicating a legacy or partner site, matching product capabilities, reproducing workflow behavior with original branding, or auditing missing UI/function/API details.
 ---
 
 # Website Replication
+
+> 中文导读：[SKILL.zh.md](SKILL.zh.md)（人类阅读用镜像；agent 仍加载本英文版）
 
 Audit any reference website — typically a competitor, but the same workflow applies to legacy versions of your own product, partner integrations, or inspiration sources you want to learn behavior from. "Competitor" throughout this document means *the site being audited*, not necessarily a market rival.
 
@@ -90,7 +93,7 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
 
 1. **Define scope and evidence**
    - List every competitor page, route, tab, mode, drawer, modal, and post-submit state in scope.
-   - **Read `audit/<site-slug>/MANIFEST.md` first.** For each in-scope URL × viewport × auth-state, look up the row. Cache hit (entry exists, `Last Captured` within 30 days) → reuse the stored snapshot + DOM, tag the evidence row `observed (cached from <date>)`, do not re-capture. Cache miss or stale → capture fresh and append / update the manifest row. Create `MANIFEST.md` with the table header if it does not exist yet.
+   - **Read `audit/<site-slug>/MANIFEST.md` first** (format: [references/manifest-template.md](references/manifest-template.md)). For each in-scope URL × viewport × auth-state, look up the row. Cache hit (entry exists, `Last Captured` within the cache window — default 30 days, see *Configuration*) → reuse the stored snapshot + DOM, tag the evidence row `observed (cached from <date>)`, do not re-capture. Cache miss or stale → capture fresh and append / update the manifest row. Create `MANIFEST.md` with the template header if it does not exist yet.
    - Capture desktop and mobile screenshots only for URLs that missed the cache. Prefer full-page screenshots plus focused component screenshots.
    - Save redacted evidence: DOM text, control inventories (buttons / inputs / links), network calls, console errors, screenshots. Network traces are always fresh — never reused, never read from old dates.
    - If the page is dynamic, inspect after interaction, not just the initial render.
@@ -103,11 +106,11 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - Keep UI differentiation intentional: preserve interaction logic and field structure while changing branding, copy, imagery, and visual rhythm.
 
 3. **Enumerate and probe interactions**
-   - **Enumerate first, click second.** Before manual probing, use browser automation to dump every interactive element in the in-scope DOM into `evidence/interactive-inventory.md` with stable IDs. Cover at minimum: `button`, `a[href]`, `input`, `select`, `textarea`, `[role=button|tab|menuitem|switch|checkbox|radio|link|option]`, `[tabindex]:not([tabindex="-1"])`, `[onclick]`, and any element whose computed style shows `cursor: pointer`. For each row record: stable ID, selector, visible label or aria-label, location (region / coords), and initial state.
-   - Walk the inventory by ID. For each row record: action taken, result, state transition, network call(s) fired, post-action screenshot path, and `observed` vs `inferred` (e.g., gated paid feature). Do not skip an ID without writing a reason.
+   - **Enumerate first, click second.** Run [references/dom-enumeration.js](references/dom-enumeration.js) via the browser-MCP eval call (or paste into DevTools console). Save the markdown output to `audit/<site-slug>/snapshots/<date>/<page-slug>-inventory.md`, following [references/inventory-template.md](references/inventory-template.md). The script handles selector priority, shadow-DOM piercing, and `cursor:pointer` detection — do not re-invent the enumeration logic.
+   - Walk the inventory by ID. For each row fill in `Probed` (`✓` / `✗`), `Result` (action + outcome + network call observed + `observed`/`inferred`/`blocked` tag), and `Notes`. Do not skip an ID without writing a reason in `Result`.
    - Treat icon-only and visually-decorative-looking controls as functional until proven otherwise. Save / clear / copy / expand / randomize / regenerate / share / more — probe each individually.
    - For each interaction also record: validation, disabled state, loading state, optimistic update, error, success output, post-submit action, auth / permission redirect, paywall / quota behavior, and mobile sticky behavior.
-   - If the page is dynamic, re-enumerate after each major state change (mode switch, modal open, post-submit). New DOM = new inventory rows.
+   - If the page is dynamic, re-run the enumeration script after each major state change (mode switch, modal open, post-submit). Append the new rows below the existing ones with a `<!-- After <state change> -->` divider.
 
 4. **Probe hidden states**
 
@@ -159,6 +162,33 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
 - Hover-only reveals, keyboard shortcuts (`?` / `/` / `ctrl+k`), right-click menus, drag-and-drop reorder — invisible without the step-4 hidden-states pass.
 - Network failure UX, offline state, slow-network skeletons — invisible until DevTools is throttled.
 - URL / history behavior: deep-link, refresh mid-flow, back / forward across modes — invisible without navigating.
+
+## Configuration
+
+Defaults are tuned for the common case. The user may override any in their request; read overrides before step 1 and state the final values in the report.
+
+| Knob | Default | When to override |
+| --- | --- | --- |
+| Cache window | 30 days | Drop to 7 days for fast-moving SPAs / weekly-deployed products; raise to 90 days for stable enterprise tools. `--fresh` disables reuse for this run. |
+| Coverage threshold | 90% | Raise to 100% for high-stakes audits. Lower below 90% only when un-probed elements have `blocked` reasons listed in the gap list. |
+| Evidence directory | `./audit/<site-slug>/` | Honor any user-provided path. |
+| Differentiation direction | (must be specified or assumed) | `workflow parity with original style` / `same features with target design system` / `research only`. |
+| Viewport set | `desktop-1440`, `mobile-iphone14` | Add `tablet-ipad`, larger desktop, or specific device profiles when the product targets them. |
+| Reflection round size | 3 candidates | Raise to 5+ for unfamiliar product categories. |
+
+## Troubleshooting
+
+| Symptom | Likely cause | Action |
+| --- | --- | --- |
+| No browser MCP available — only static fetch works | Skill cannot observe interactions | Continue, but mark every interaction `inferred`, set Coverage = 0% with reason "no browser automation", and warn the user the result is research-only. |
+| `dom-enumeration.js` returns < 5 elements on a non-trivial page | SPA renders into shadow DOM or iframes; selectors miss them | The script pierces open shadow roots; cross-origin iframes are inaccessible by design. For same-origin iframes, re-run inside each frame's context. Closed shadow roots are unreachable — mark `inferred`. |
+| Cache hit but the live page visibly differs from the stored screenshot | Site was redesigned within the cache window | Force fresh for this row; update `Last Captured` and add MANIFEST note "redesigned since <previous date>". |
+| Network panel shows no requests for an obviously remote action | Call uses WebSocket, Server-Sent Events, or `navigator.sendBeacon` | Switch DevTools to "All" not "Fetch/XHR"; capture WS frames; tag as `observed (via WS)` or `observed (via beacon)`. |
+| Authenticated state required but credentials unavailable | Paid / SSO / private surface | Mark `blocked` in the parity matrix; do not bypass auth. Use public docs to fill `documented` rows. |
+| `MANIFEST.md` missing on first run | Expected — no prior audit | Create with the header from [references/manifest-template.md](references/manifest-template.md); append rows as you capture. |
+| Coverage below 90% with no `blocked` reason | Step 3 was skipped or rushed | Return to step 3 against the unfilled IDs; do not submit the deliverable yet. |
+| Reflection round (step 7) produces no concrete misses | Agent saturated on existing report content | Use [references/parity-checklist.md](references/parity-checklist.md) "Hidden States And Coverage" — pick the first three items still unticked. |
+| Screenshots tracked into git accidentally show PII | Reviewer skipped the redaction pass | Untrack with `git rm --cached <path>`, sanitize, re-commit. See *Evidence Safety*. Long-term: switch the consumer project's `.gitignore` block to the single `audit/` line. |
 
 ## Output
 
