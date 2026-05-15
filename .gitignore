@@ -3,9 +3,32 @@
 .claude/settings.local.*
 .codex/settings.local.*
 
-# Audit output — may contain screenshots, DOM dumps, network traces, or PII
-# Skill writes here by default; never commit real audit evidence.
-audit/
+# Audit output — selectively tracked.
+#
+# Tracked:   PNG screenshots and MANIFEST.md — lets the snapshot cache survive
+#            across machines and be shared with teammates.
+# Ignored:   DOM dumps, network traces, raw reports, and other high-risk file
+#            types — they routinely contain PII, auth headers, customer data,
+#            or synthesized sensitive summaries even after best-effort
+#            redaction.
+#
+# IMPORTANT: review every PNG for visible PII (usernames, emails, customer
+#            content, internal IDs) BEFORE committing. See the Evidence Safety
+#            section in SKILL.md.
+#
+# To lock the entire directory down (most conservative for privacy), replace
+# the block below with a single line: `audit/`
+audit/**/*.html
+audit/**/*.htm
+audit/**/*.har
+audit/**/*.har.gz
+audit/**/*.json
+audit/**/*.txt
+audit/**/*.log
+audit/**/*.csv
+audit/**/network/
+audit/**/dom/
+audit/**/reports/
 
 # OS
 .DS_Store

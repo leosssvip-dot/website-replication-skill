@@ -23,6 +23,7 @@ Replicate useful product behavior, not protected expression. Do not copy logos, 
 - Redact secrets and personal data before saving or reporting evidence: cookies, authorization headers, session IDs, tokens, account identifiers, customer data, uploaded file contents, message/prompt contents that may contain private data, and one-time URLs.
 - For network traces, record method, route pattern, auth class, redacted payload shape, response shape, status code, and error class. Do not paste raw credential-bearing headers or full private payloads.
 - Respect access boundaries. If a state requires paid or authenticated access that is unavailable, mark it as blocked and infer only from visible evidence or official docs.
+- The default `.gitignore` tracks PNG screenshots and `MANIFEST.md` so the snapshot cache is shareable across machines; it ignores DOM dumps, network traces, reports, and other high-risk file types. Review every screenshot for visible PII (usernames, emails, customer content, internal IDs) before committing. To lock the directory down entirely, replace the audit block in `.gitignore` with a single `audit/` line.
 
 ## Required Inputs
 
