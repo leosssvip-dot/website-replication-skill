@@ -8,7 +8,6 @@ Planned for the next milestones — not yet implemented:
 
 - CI: markdown lint + link checker + SKILL.md frontmatter validator on PRs.
 - Migration guide for skill-version bumps when the consumer project has a cached `MANIFEST.md`.
-- Comparison matrix vs. `ui-style-extractor` and similar reference-extraction skills.
 - Add a third `Probed` state for "observed by URL / static attribute, not clicked" — surfaced during the Gemini sample run; current `✓ / ✗` collapses two distinct cases.
 - A second real audit on a fully public site (no auth gating) to complement the Gemini anonymous-tier sample, demonstrating 100% coverage.
 

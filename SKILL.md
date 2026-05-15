@@ -22,7 +22,7 @@ Replicate useful product behavior, not protected expression. Do not copy logos, 
 
 - Legal / IP / ToS compliance judgement. Flag risk, do not make a legal call. Recommend the user consult counsel for trademark, patent, or ToS questions.
 - Performance benchmarking, SEO ranking, or marketing-channel analysis. Not feature parity. Use a dedicated skill.
-- Pure visual inspiration ("their UI feels nicer"). Prefer `ui-style-extractor`, which is lighter weight when only a style guide is needed.
+- Pure visual inspiration ("their UI feels nicer"). This skill assumes you want behavior + structure parity, not just a style guide; reach for a lighter style-extraction tool instead.
 - Authenticated or paid state the user cannot legitimately access. Mark blocked. Do not bypass auth, paywalls, rate limits, robots restrictions, or technical protections.
 
 ## Evidence Safety
