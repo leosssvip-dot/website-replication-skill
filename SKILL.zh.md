@@ -37,14 +37,16 @@
    - 每个 claim 标 `observed` / `documented` / `inferred` / `blocked` / `not applicable`。复用证据仍是 `observed`（30 天窗口是可靠性预算）。
 
 2. **抽取 UI 系统**
-   - 文档化布局、网格、shell / 导航、密度、间距、圆角、边框、色彩、字体、媒体处理、阴影、动效。
+   - 在浏览器 MCP eval 里跑 [references/design-tokens.js](references/design-tokens.js)。脚本对可见元素做 `getComputedStyle` 直方图，输出"色彩 / 字体 / 字号 / 圆角 / 阴影 / 间距"的 top 值表 —— 直接拿来填 Visual Tokens 段，不要靠眼力估 CSS。
+   - 文档化布局、网格、shell / 导航、密度、间距、圆角、边框、色彩、字体、媒体处理、阴影、动效——脚本给数字，你写综合。
    - 建组件清单：导航、卡片、tab、segmented control、输入框、上传、chip、工具栏、modal、drawer、结果项、history、gating UI。
    - 用**目标产品自己的 token 与文案**写 HTML/CSS 示例，仅演示结构模式（如 icon + label 的 flex 布局）。不要粘竞品 class 名、精确间距、文案。
    - UI 差异化是有意为之：保留交互逻辑与字段结构，改 branding / 文案 / 图像 / 视觉节奏。
 
 3. **枚举并探测交互**
    - **先枚举，再点击**。在浏览器自动化里跑 [references/dom-enumeration.js](references/dom-enumeration.js)（DevTools 控制台 eval 或 browser-MCP 的 eval 接口）。markdown 输出保存为 `audit/<site-slug>/snapshots/<date>/<page-slug>-inventory.md`，格式见 [references/inventory-template.md](references/inventory-template.md)。脚本已处理选择器优先级、shadow DOM 穿透、`cursor:pointer` 探测，**不要自己重新发明枚举逻辑**。
-   - 按 ID 逐行走 inventory。每行填 `Probed`（✓ / ✗）、`Result`（动作 + 结果 + 观察到的网络调用 + `observed`/`inferred`/`blocked` 标签）、`Notes`。跳过任何 ID 都必须在 `Result` 里写原因。
+   - 按 ID 逐行走 inventory。每行填 `Probed`（`✓` 点过 / `o` URL/属性观察 / `✗` 跳过）、`Result`（动作 + 结果 + 观察到的网络调用 + `observed` / `inferred` / `blocked` 标签）、`Notes`。跳过任何 ID 都必须在 `Result` 里写原因。
+   - **每个非平凡状态变化**（modal 打开、drawer 展开、mode 切换、submit 后）前后各跑一次 [references/dom-distill.js](references/dom-distill.js)，再用 [references/state-diff.js](references/state-diff.js) 比对：`node references/state-diff.js before.md after.md`。diff 输出填进 `Result` 列——取代散文描述，让"发生了什么"变成机械结果。
    - icon-only 与看起来装饰性的控件都按"有功能"处理直到反证。save / clear / copy / expand / randomize / regenerate / share / more — 一个一个 probe。
    - 每条交互还要记：validation、disabled、loading、optimistic update、error、success 输出、submit 后动作、auth / permission 重定向、paywall / quota、移动端 sticky。
    - 动态页面在每次重大状态变化（mode 切换、modal 打开、submit 后）后重跑枚举脚本，新行用 `<!-- After <state change> -->` 分隔追加。
@@ -65,6 +67,7 @@
 
 5. **审计 API 与后端能力**
    - 抓观察到的网络调用：method、route pattern、headers / auth class、脱敏 payload 形状、response 形状、status code、error class。
+   - 把请求列表喂给 [references/network-cluster.js](references/network-cluster.js)：`node references/network-cluster.js requests.txt`。脚本按 `host + path-pattern + method` 聚类、自动泛化 ID / UUID / token、识别 RPC-batched 端点（`rpcids` 子键）、长轮询 / 实时通道 / 遥测主机。输出当 *Observed endpoints* 表初稿用，再人工校对每行。
    - 读官方 / API / 集成文档。分清 `observed` / `documented` / `inferred`。
    - 把竞品 UI 字段映射到目标后端字段。**不主动重设计目标 API 契约**，除非用户明示。
    - 列出缺失：endpoint、第三方集成、auth / 权限、文件上传 / 存储、后台任务、异步完成（polling / webhook）、计费 / 配额、限流、持久化 / 历史。
@@ -76,7 +79,8 @@
    - 架构推荐只在 API + 数据需求明确后给：前端框架、服务器 / API 层、队列、数据库、对象存储、缓存、auth、计费、第三方集成、可观测性。
 
 7. **反思并核对覆盖率**（强制 gate，在 step 8 前）
-   - 计算覆盖率：`enumerated N · probed M · coverage M/N (X%)`。<90% 且无 `blocked` 原因 → 回 step 3 把漏的 probe 完再继续。
+   - 对每份 per-page inventory 跑 [references/coverage.js](references/coverage.js)：`node references/coverage.js audit/<site>/snapshots/<date>/<page>-inventory.md [--threshold=90]`。脚本解析 `Probed` 列、统计 `✓` / `o` / `✗`、算覆盖率，**覆盖率 < 阈值且有 ✗ 行没写 `blocked` 理由时退出码 ≠ 0**。这是正式 gate，不靠 agent 自报数字。
+   - 脚本退出码 ≠ 0 时，按它列出的 ID 回 step 3 补，不许进 step 8。
    - 显式问自己：*"鉴于这个产品类型，我最可能漏掉的三件事是什么？"* 写下三个候选 — 常见盲点：submit 成功后状态、错误恢复路径、设置 / 偏好、history / undo、分享 / 导出、移动端专属 affordance、付费层暗示在免费层的可见线索 — 然后 probe 每一个，记录结果。
    - 对照最终态的 DOM 复核 inventory。交互打开的新元素（modal 内容、drawer 内容、展开面板）必须枚举并 probe。
    - 把结果写进交付物的 *Interaction Coverage* 段。**只有走完这一轮才能进 step 8**。

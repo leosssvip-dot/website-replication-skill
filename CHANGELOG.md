@@ -8,8 +8,29 @@ Planned for the next milestones — not yet implemented:
 
 - CI: markdown lint + link checker + SKILL.md frontmatter validator on PRs.
 - Migration guide for skill-version bumps when the consumer project has a cached `MANIFEST.md`.
-- Add a third `Probed` state for "observed by URL / static attribute, not clicked" — surfaced during the Gemini sample run; current `✓ / ✗` collapses two distinct cases.
 - A second real audit on a fully public site (no auth gating) to complement the Gemini anonymous-tier sample, demonstrating 100% coverage.
+- Stress-test the four v0.3 scripts on diverse sites (heavy-shadow-DOM SPA, large data table, infinite-scroll feed).
+
+## [0.3.0] — 2026-05-15
+
+### Added — four automation scripts that displace agent-by-hand work
+
+- **`references/coverage.js`** (Node CLI) — formal Step 7 gate. Parses an `interactive-inventory.md`, counts `✓` / `o` / `✗`, computes coverage %, **exits non-zero** if below threshold (default 90%) and any un-probed row lacks a `blocked` reason. Agent self-reporting is no longer the gate; this is.
+- **`references/network-cluster.js`** (Node CLI) — Step 5 helper. Reads "METHOD URL [status]" lines (chrome-devtools-mcp's `list_network_requests` output shape), clusters by host + generalized path pattern (IDs / UUIDs / tokens collapsed to `:id` / `:uuid` / `:token`), and flags RPC-batched endpoints (`rpcids` etc.), likely polling, real-time channels (`signaler` / `channel` / `sse`), and telemetry hosts.
+- **`references/state-diff.js`** (Node CLI) — Step 3 helper. Diffs two `dom-distill.js` outputs by element signature (tag + sorted attrs), reports added / removed nodes. Replaces ad-hoc "what changed when I clicked" narration with deterministic structural output.
+- **`references/design-tokens.js`** (browser) — Step 2 helper. Histograms `getComputedStyle` across visible elements, outputs top colors / fonts / sizes / radii / shadows / spacings. Includes a merged color palette and a "spacing scale guess" section. Side-effect-free.
+
+### Changed
+
+- **`Probed` column gains a third state**: `o` for "observed by URL / static attribute, not clicked" — surfaced as a gap during the Gemini sample run. `coverage.js` treats `✓` and `o` as covered, `✗` as skipped, separates `blocked`-reason skips from unjustified ones.
+- **SKILL.md and Chinese mirror** wire the four scripts into steps 2 / 3 / 5 / 7 explicitly with command examples.
+
+### Notes
+
+- All Node scripts tested locally against synthetic fixtures. `design-tokens.js` is browser-only — verify when next running an audit.
+- This is a MINOR bump per the CHANGELOG's own SemVer convention — new optional tooling, no breaking workflow contract change. Existing inventories without the `o` Probed state still parse correctly (treated as `✗`).
+
+## [0.2.0] — 2026-05-15
 
 ## [0.2.0] — 2026-05-15
 

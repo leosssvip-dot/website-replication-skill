@@ -1,6 +1,6 @@
 ---
 name: website-replication-skill
-version: 0.2.0
+version: 0.3.0
 description: Audit a reference website or web app and produce a differentiated parity plan covering UI, interactions, API contracts, data model, and architecture. Use when benchmarking a competitor, replicating a legacy or partner site, matching product capabilities, reproducing workflow behavior with original branding, or auditing missing UI/function/API details.
 ---
 
@@ -104,14 +104,16 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - Track each claim as `observed`, `documented`, `inferred`, `blocked`, or `not applicable`. Cached evidence stays `observed` — the 30-day window is the reliability budget.
 
 2. **Extract UI system**
-   - Document layout, grid, shell / navigation, density, spacing, radius, borders, colors, typography, media treatment, shadows, motion.
+   - Run [references/design-tokens.js](references/design-tokens.js) via the browser-MCP eval. It histograms `getComputedStyle` across visible elements and outputs a markdown table of top colors, fonts, sizes, radii, shadows, spacings — populate the deliverable's Visual Tokens table from this rather than eyeballing CSS.
+   - Document layout, grid, shell / navigation, density, spacing, radius, borders, colors, typography, media treatment, shadows, motion — the script gives the numbers; you write the synthesis.
    - Build a component inventory: navigation, cards, tabs, segmented controls, inputs, uploads, chips, toolbars, modals, drawers, result/list items, history panels, gating UI.
    - Produce HTML/CSS examples *using the target brand's own tokens and copy*, demonstrating only the structural pattern (e.g. flex layout with left icon + label). Do not paste competitor class names, exact spacing values, or copy.
    - Keep UI differentiation intentional: preserve interaction logic and field structure while changing branding, copy, imagery, and visual rhythm.
 
 3. **Enumerate and probe interactions**
    - **Enumerate first, click second.** Run [references/dom-enumeration.js](references/dom-enumeration.js) via the browser-MCP eval call (or paste into DevTools console). Save the markdown output to `audit/<site-slug>/snapshots/<date>/<page-slug>-inventory.md`, following [references/inventory-template.md](references/inventory-template.md). The script handles selector priority, shadow-DOM piercing, and `cursor:pointer` detection — do not re-invent the enumeration logic.
-   - Walk the inventory by ID. For each row fill in `Probed` (`✓` / `✗`), `Result` (action + outcome + network call observed + `observed`/`inferred`/`blocked` tag), and `Notes`. Do not skip an ID without writing a reason in `Result`.
+   - Walk the inventory by ID. For each row fill in `Probed` (`✓` clicked / `o` observed-by-URL-or-attribute / `✗` skipped), `Result` (action + outcome + network call observed + `observed` / `inferred` / `blocked` tag), and `Notes`. Do not skip an ID without writing a reason in `Result`.
+   - **For each non-trivial state change** (modal open, drawer expand, mode switch, post-submit), run [references/dom-distill.js](references/dom-distill.js) before and after, then diff with [references/state-diff.js](references/state-diff.js): `node references/state-diff.js before.md after.md`. The diff output goes into `Result` — replaces ad-hoc narration with deterministic added/removed lists.
    - Treat icon-only and visually-decorative-looking controls as functional until proven otherwise. Save / clear / copy / expand / randomize / regenerate / share / more — probe each individually.
    - For each interaction also record: validation, disabled state, loading state, optimistic update, error, success output, post-submit action, auth / permission redirect, paywall / quota behavior, and mobile sticky behavior.
    - If the page is dynamic, re-run the enumeration script after each major state change (mode switch, modal open, post-submit). Append the new rows below the existing ones with a `<!-- After <state change> -->` divider.
@@ -132,6 +134,7 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
 
 5. **Audit API and backend capability**
    - Capture observed network calls with method, route pattern, headers / auth class, redacted payload shape, response shape, status code, error class.
+   - Run [references/network-cluster.js](references/network-cluster.js) over the captured request list: `node references/network-cluster.js requests.txt`. The script clusters by `host + path-pattern + method`, generalizes IDs / UUIDs / tokens, and flags RPC-batched endpoints (carrying `rpcids` or similar sub-keys), likely polling, real-time channels, and telemetry hosts. Use its output as the first draft of the *Observed endpoints* table — verify each cluster manually before publishing.
    - Read official / API / integration docs when available. Separate `observed`, `documented`, and `inferred` claims.
    - Map competitor UI fields to target backend fields. Preserve existing target API contracts unless the user asks to redesign them.
    - Identify missing endpoints, third-party integrations, auth / permissions, file upload / storage, background jobs, async completion (polling / webhook), billing / quota, rate limits, and persistence / history.
@@ -143,7 +146,8 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - Recommend architecture only after API and data needs are known: frontend framework, server / API layer, queue, database, object storage, cache, auth, billing, third-party integrations, observability.
 
 7. **Reflect and verify coverage** *(mandatory before step 8)*
-   - Compute coverage: `enumerated N · probed M · coverage M/N (X%)`. If under 90% without a `blocked` reason, return to step 3 and probe the gap before proceeding.
+   - Run [references/coverage.js](references/coverage.js) against each per-page inventory: `node references/coverage.js audit/<site>/snapshots/<date>/<page>-inventory.md [--threshold=90]`. The script parses the `Probed` column, counts `✓` / `o` / `✗`, computes coverage, and **exits non-zero** if coverage < threshold and any un-probed row lacks a `blocked` reason. This is the formal gate — agent self-reporting is not.
+   - If coverage.js exits non-zero, return to step 3 against the IDs it listed; do not advance to step 8.
    - Ask explicitly: *"Given this product category, what are the three things I am most likely to have missed?"* Write the three candidates down — common blind spots: post-success states, error recovery paths, settings / preferences, history / undo, sharing / export, mobile-only affordances, paid-tier hints visible to free users — then probe each and record the result.
    - Re-check the inventory against the rendered DOM after the final state. Any new elements added by interactions (modal contents, drawer contents, expanded panels) must be enumerated and probed.
    - Record results in the deliverable's *Interaction Coverage* section. Only after this round may you proceed to step 8.
