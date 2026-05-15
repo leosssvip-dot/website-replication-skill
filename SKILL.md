@@ -6,6 +6,10 @@ description: Audit a reference website or web app and produce a differentiated p
 
 # Website Replication
 
+> **Required tooling**: at least one browser automation MCP (Chrome MCP / Playwright MCP / Claude Preview). Without it, the skill degrades to static HTML fetch and every interaction is forced to `inferred`; coverage drops to 0% by definition. See *Tooling* for the full list and *Troubleshooting* for the no-browser fallback.
+>
+> **Agent harness**: this skill is markdown + JS + YAML; any agent harness that can load markdown skills and call file + browser tools can run it. Claude Code and OpenAI Codex are the tested harnesses; other harnesses work by symlinking or copying the directory into their skill location.
+>
 > 中文导读：[SKILL.zh.md](SKILL.zh.md)（人类阅读用镜像；agent 仍加载本英文版）
 
 Audit any reference website — typically a competitor, but the same workflow applies to legacy versions of your own product, partner integrations, or inspiration sources you want to learn behavior from. "Competitor" throughout this document means *the site being audited*, not necessarily a market rival.

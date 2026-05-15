@@ -2,7 +2,7 @@
 
 > [English](#english) · [中文](#中文)
 
-A portable skill for **Claude Code** and **OpenAI Codex** that audits any reference website or web app and produces a *differentiated parity plan* across UI, interactions, API contracts, data model, and architecture — without copying protected expression.
+An **agent-harness-agnostic** skill that audits any reference website or web app and produces a *differentiated parity plan* across UI, interactions, API contracts, data model, and architecture — without copying protected expression. Tested on **Claude Code** and **OpenAI Codex**; any harness that loads markdown skills and exposes file + browser MCP tools can run it.
 
 ---
 
@@ -98,9 +98,26 @@ git clone https://github.com/leosssvip-dot/website-replication-skill.git \
 
 In Codex CLI / IDE, type `$website-replication-skill` to invoke explicitly. Implicit invocation is enabled via `agents/openai.yaml`.
 
+#### Other agent harnesses
+
+The skill is plain markdown + a JS enumeration script + a YAML manifest — no harness-specific runtime. Any agent that can:
+
+1. Load markdown files as system / skill context (so `SKILL.md` reaches the model)
+2. Read / write files (so `MANIFEST.md`, inventories, and reports persist)
+3. Call a browser automation MCP (Chrome MCP / Playwright MCP / equivalent)
+
+…can run it. Copy or symlink this directory into wherever your harness expects skills:
+
+```bash
+git clone https://github.com/leosssvip-dot/website-replication-skill.git \
+  <your-harness-skill-dir>/website-replication-skill
+```
+
+Tested concretely on Claude Code and OpenAI Codex. Other harnesses are expected to work but have not been verified — please open an issue with results if you try one.
+
 #### Project-scoped install
 
-Drop the directory under `.claude/skills/` or `.codex/skills/` inside a specific repo to make the skill available only for that project.
+Drop the directory under `.claude/skills/` or `.codex/skills/` (or your harness's equivalent) inside a specific repo to make the skill available only for that project.
 
 ### Usage
 
@@ -161,7 +178,9 @@ Please do **not** submit:
 
 ### 简介
 
-一个可移植的 skill，适配 **Claude Code** 与 **OpenAI Codex**。用于审计任意参考网站或 Web 应用，产出一份覆盖 UI、交互、API 契约、数据模型、架构的**差异化对等实施方案** —— 而不复制受保护的表达。
+**与 agent harness 无关**的 skill，可在任意支持加载 markdown skill + 浏览器 MCP 工具的 agent 框架里运行。已在 **Claude Code** 与 **OpenAI Codex** 上验证；其它框架（Cursor / Continue / Aider / 自研 harness 等）按下方"Other agent harnesses"段 symlink 或 copy 即可。
+
+用于审计任意参考网站或 Web 应用，产出一份覆盖 UI、交互、API 契约、数据模型、架构的**差异化对等实施方案** —— 而不复制受保护的表达。
 
 **典型场景**：竞品对标 · 复刻自家旧版产品 · 学习合作方集成行为 · 审计灵感来源。
 
@@ -251,9 +270,26 @@ git clone https://github.com/leosssvip-dot/website-replication-skill.git \
 
 在 Codex CLI / IDE 输入 `$website-replication-skill` 显式调用。隐式调用由 `agents/openai.yaml` 启用。
 
+#### 其它 agent 框架
+
+Skill 本体是纯 markdown + JS 枚举脚本 + YAML manifest，没有 harness 专属 runtime。只要你的 agent 能：
+
+1. 把 markdown 文件作为 system / skill 上下文加载（让 `SKILL.md` 能被模型读到）
+2. 读写文件（让 `MANIFEST.md`、inventory、报告能持久化）
+3. 调用浏览器自动化 MCP（Chrome MCP / Playwright MCP / 同类）
+
+就能跑。把目录 clone / symlink 到 harness 期望的 skill 目录即可：
+
+```bash
+git clone https://github.com/leosssvip-dot/website-replication-skill.git \
+  <你的-harness-skill-目录>/website-replication-skill
+```
+
+Claude Code 与 OpenAI Codex 已实测可用；其它 harness 预期可用但未验证 —— 跑通了欢迎开 issue 反馈。
+
 #### 项目级安装
 
-把目录放进具体仓库的 `.claude/skills/` 或 `.codex/skills/`，skill 只在该项目下可用。
+把目录放进具体仓库的 `.claude/skills/` 或 `.codex/skills/`（或你 harness 的等价目录），skill 只在该项目下可用。
 
 ### 使用
 
