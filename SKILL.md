@@ -43,16 +43,35 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
 - Network inspection: DevTools panel via the browser MCP, or `curl -v` for unauthenticated endpoints.
 - Mobile: a mobile MCP / device farm for real screenshots; otherwise emulate via DevTools responsive mode and mark device-specific behavior `inferred`.
 - Static docs / API references: `WebFetch` or a web-reader MCP.
-- Default evidence directory: `./audit/<competitor-slug>/<YYYY-MM-DD>/` with `screenshots/`, `network/`, `dom/`, `report.md`. Honor a user-provided path if given.
+- Default evidence directory and **cross-audit screenshot reuse**: root at `./audit/<site-slug>/` (honor a user-provided path if given). Layout:
+
+  ```
+  audit/<site-slug>/
+  ├── MANIFEST.md                # central index, one row per unique URL × viewport × auth
+  ├── snapshots/<YYYY-MM-DD>/    # screenshots + DOM dumps captured that day
+  ├── network/<YYYY-MM-DD>/      # network traces (time-sensitive — always fresh, never reused)
+  └── reports/<YYYY-MM-DD>.md    # the audit deliverable
+  ```
+
+  `MANIFEST.md` is the single source of truth for "have I captured this before?". Format:
+
+  ```markdown
+  | URL | Viewport | Auth | Last Captured | Snapshot | DOM | Notes |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | https://example.com/dashboard | desktop-1440 | free | 2026-05-15 | snapshots/2026-05-15/dashboard.png | snapshots/2026-05-15/dashboard.html | post-redesign |
+  ```
+
+  **Reuse rule (time-based, 30-day window)**: if a manifest entry exists and `Last Captured` is within 30 days, reuse the stored snapshot and DOM, and tag the evidence row `observed (cached from <date>)`. Otherwise capture fresh and append / update the manifest. Force-fresh capture when the user explicitly asks or the cached snapshot is visibly stale against the live page. Network traces are never reused — auth class, rate-limit headers, and A/B bucketing are all time-sensitive.
 
 ## Workflow
 
 1. **Define scope and evidence**
    - List every competitor page, route, tab, mode, drawer, modal, and post-submit state in scope.
-   - Capture desktop and mobile screenshots. Prefer full-page screenshots plus focused component screenshots.
-   - Save redacted evidence: DOM text, control inventories (buttons / inputs / links), network calls, console errors, screenshots.
+   - **Read `audit/<site-slug>/MANIFEST.md` first.** For each in-scope URL × viewport × auth-state, look up the row. Cache hit (entry exists, `Last Captured` within 30 days) → reuse the stored snapshot + DOM, tag the evidence row `observed (cached from <date>)`, do not re-capture. Cache miss or stale → capture fresh and append / update the manifest row. Create `MANIFEST.md` with the table header if it does not exist yet.
+   - Capture desktop and mobile screenshots only for URLs that missed the cache. Prefer full-page screenshots plus focused component screenshots.
+   - Save redacted evidence: DOM text, control inventories (buttons / inputs / links), network calls, console errors, screenshots. Network traces are always fresh — never reused, never read from old dates.
    - If the page is dynamic, inspect after interaction, not just the initial render.
-   - Track each claim as `observed`, `documented`, `inferred`, `blocked`, or `not applicable`.
+   - Track each claim as `observed`, `documented`, `inferred`, `blocked`, or `not applicable`. Cached evidence stays `observed` — the 30-day window is the reliability budget.
 
 2. **Extract UI system**
    - Document layout, grid, shell / navigation, density, spacing, radius, borders, colors, typography, media treatment, shadows, motion.

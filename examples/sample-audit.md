@@ -18,14 +18,16 @@ Filled against [../references/output-template.md](../references/output-template.
 
 ## 2. Evidence
 
+Manifest at `audit/acme-tasks/MANIFEST.md`. Today's snapshots in `audit/acme-tasks/snapshots/2026-05-14/`. Dashboard + kanban reused from the previous audit (within the 30-day window); mobile dashboard and DOM dumps re-captured because they were absent or stale. Network traces always fresh.
+
 | Evidence | Path / URL | Source | Redaction | Notes |
 | --- | --- | --- | --- | --- |
-| Desktop screenshot — dashboard | `evidence/desktop-dashboard.png` | observed | username masked | full page |
-| Desktop screenshot — project kanban | `evidence/desktop-kanban.png` | observed | task titles replaced with `<task N>` | |
-| Mobile screenshot — dashboard | `evidence/mobile-dashboard.png` | observed | username masked | iPhone 14 viewport |
-| DOM / text dump — task detail | `evidence/dom-task-detail.html` | observed | task body + comments stripped | only structural markers kept |
-| Network log — task CRUD | `evidence/network-tasks.har` | observed | `Authorization`, `Cookie`, user IDs redacted | auth class only |
-| Interactive inventory | `evidence/interactive-inventory.md` | observed | n/a | 87 stable IDs across 5 pages |
+| Desktop screenshot — dashboard | `audit/acme-tasks/snapshots/2026-04-22/dashboard.png` | observed (cached from 2026-04-22) | username masked | reused via manifest |
+| Desktop screenshot — project kanban | `audit/acme-tasks/snapshots/2026-04-22/kanban.png` | observed (cached from 2026-04-22) | task titles replaced with `<task N>` | reused via manifest |
+| Mobile screenshot — dashboard | `audit/acme-tasks/snapshots/2026-05-14/dashboard-mobile.png` | observed | username masked | iPhone 14 viewport — fresh capture |
+| DOM / text dump — task detail | `audit/acme-tasks/snapshots/2026-05-14/task-detail.html` | observed | task body + comments stripped | only structural markers kept |
+| Network log — task CRUD | `audit/acme-tasks/network/2026-05-14/tasks.har` | observed | `Authorization`, `Cookie`, user IDs redacted | auth class only |
+| Interactive inventory | `audit/acme-tasks/snapshots/2026-05-14/interactive-inventory.md` | observed | n/a | 87 stable IDs across 5 pages |
 
 ### Interaction Coverage
 
