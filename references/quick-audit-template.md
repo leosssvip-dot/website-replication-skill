@@ -21,8 +21,19 @@ Skip any section that does not apply and say so explicitly (e.g. `no backend in 
 | Mobile screenshot |  | observed |  |
 | DOM / text dump |  | observed |  |
 | Network log |  | observed | redacted |
+| Interactive inventory |  | observed | DOM-enumerated, stable IDs |
 
 All evidence must be redacted: no cookies, auth headers, tokens, account IDs, customer data, private message contents, or one-time URLs.
+
+### Interaction Coverage
+
+- Interactive elements enumerated: __
+- Probed: __ / __ (target ≥ 90%, else list un-probed below with reason)
+- Hidden-state passes done: hover · keyboard · right-click · drag · scroll · input-edge · network · url-history · multi-window
+- Reflection (3 likely-missed candidates + probe result):
+  1. __ → __
+  2. __ → __
+  3. __ → __
 
 ## 3. UI Snapshot
 
@@ -76,6 +87,9 @@ Skip the table and write `no backend work in scope` if research-only.
 
 - [ ] Screenshots saved (desktop + mobile).
 - [ ] Evidence is redacted.
+- [ ] Interactive inventory generated; coverage ≥ 90% or gaps justified.
+- [ ] Hidden-state passes done or marked `not applicable`.
+- [ ] Reflection round (3 candidates) probed.
 - [ ] Interaction matrix covers small / icon-only controls.
 - [ ] API status separates observed / documented / inferred / blocked / missing.
 - [ ] Gap list splits "can implement now" vs "needs preparation".

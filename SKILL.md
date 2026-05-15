@@ -60,24 +60,46 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - Produce HTML/CSS examples *using the target brand's own tokens and copy*, demonstrating only the structural pattern (e.g. flex layout with left icon + label). Do not paste competitor class names, exact spacing values, or copy.
    - Keep UI differentiation intentional: preserve interaction logic and field structure while changing branding, copy, imagery, and visual rhythm.
 
-3. **Probe interactions**
-   - Click every visible control: tabs, mode switches, secondary actions (clear, copy, save, expand, randomize, optimize, more), submit / CTA, upload / select flows, advanced toggles, examples, history items, gated states.
-   - Record state transitions, validation, disabled states, loading states, optimistic updates, errors, success output, post-submit actions, auth / permission redirects, paywall / quota behavior, and mobile sticky controls.
-   - Treat small controls as functional until proven decorative. Missing behavior is a product gap even when the UI looks similar.
+3. **Enumerate and probe interactions**
+   - **Enumerate first, click second.** Before manual probing, use browser automation to dump every interactive element in the in-scope DOM into `evidence/interactive-inventory.md` with stable IDs. Cover at minimum: `button`, `a[href]`, `input`, `select`, `textarea`, `[role=button|tab|menuitem|switch|checkbox|radio|link|option]`, `[tabindex]:not([tabindex="-1"])`, `[onclick]`, and any element whose computed style shows `cursor: pointer`. For each row record: stable ID, selector, visible label or aria-label, location (region / coords), and initial state.
+   - Walk the inventory by ID. For each row record: action taken, result, state transition, network call(s) fired, post-action screenshot path, and `observed` vs `inferred` (e.g., gated paid feature). Do not skip an ID without writing a reason.
+   - Treat icon-only and visually-decorative-looking controls as functional until proven otherwise. Save / clear / copy / expand / randomize / regenerate / share / more — probe each individually.
+   - For each interaction also record: validation, disabled state, loading state, optimistic update, error, success output, post-submit action, auth / permission redirect, paywall / quota behavior, and mobile sticky behavior.
+   - If the page is dynamic, re-enumerate after each major state change (mode switch, modal open, post-submit). New DOM = new inventory rows.
 
-4. **Audit API and backend capability**
+4. **Probe hidden states**
+
+   Run each pass once per primary page; mark `not applicable` for any that genuinely don't apply. Skipping this step is the #1 source of parity gaps.
+
+   - **Hover / focus**: tab through every focusable element and hover every interactive element; capture revealed tooltips, popovers, secondary actions, helper text.
+   - **Keyboard shortcuts**: at minimum try `?` (help overlay), `/` (search focus), `ctrl/cmd+k` (command palette), `esc` (modal / drawer close), `enter` (submit), arrow keys (list nav), `tab` order and traps, undo / redo.
+   - **Right-click / long-press**: try the primary content area, list items, and any rich-content surface for custom context menus.
+   - **Drag / drop / reorder**: try repositioning list items, files, cards; record the reorder API and any cross-container moves.
+   - **Scroll-triggered**: scroll to bottom (infinite scroll, lazy load, sticky CTA, "back to top"); scroll within nested containers; mobile bottom-bar appearance.
+   - **Input edge cases**: empty submit · max length · paste of formatted content · paste of disallowed chars · IME composition · disabled-state attempts.
+   - **Network states**: throttle to slow 3G and capture skeletons / spinners; toggle offline and capture error UX; force a 5xx (DevTools "Network → Block" + replay) and capture recovery affordance.
+   - **URL / history**: deep-link directly into a state · back / forward across modes · refresh mid-flow · open in new tab from a list item.
+   - **Multi-window / cross-tab**: where state is shared (carts, drafts, notifications), open a second tab and probe sync direction.
+
+5. **Audit API and backend capability**
    - Capture observed network calls with method, route pattern, headers / auth class, redacted payload shape, response shape, status code, error class.
    - Read official / API / integration docs when available. Separate `observed`, `documented`, and `inferred` claims.
    - Map competitor UI fields to target backend fields. Preserve existing target API contracts unless the user asks to redesign them.
    - Identify missing endpoints, third-party integrations, auth / permissions, file upload / storage, background jobs, async completion (polling / webhook), billing / quota, rate limits, and persistence / history.
    - Never delete product features because an API or integration is missing. Mark the gap, search docs when allowed, and propose the backend / API preparation needed.
 
-5. **Model data and architecture**
+6. **Model data and architecture**
    - Draft core entities suited to the competitor's domain. Adjust to product type: SaaS, e-commerce, content, collaboration, AI tool, marketplace, internal tool, etc.
    - Output ER and status-machine diagrams when data or async tasks matter.
    - Recommend architecture only after API and data needs are known: frontend framework, server / API layer, queue, database, object storage, cache, auth, billing, third-party integrations, observability.
 
-6. **Plan implementation**
+7. **Reflect and verify coverage** *(mandatory before step 8)*
+   - Compute coverage: `enumerated N · probed M · coverage M/N (X%)`. If under 90% without a `blocked` reason, return to step 3 and probe the gap before proceeding.
+   - Ask explicitly: *"Given this product category, what are the three things I am most likely to have missed?"* Write the three candidates down — common blind spots: post-success states, error recovery paths, settings / preferences, history / undo, sharing / export, mobile-only affordances, paid-tier hints visible to free users — then probe each and record the result.
+   - Re-check the inventory against the rendered DOM after the final state. Any new elements added by interactions (modal contents, drawer contents, expanded panels) must be enumerated and probed.
+   - Record results in the deliverable's *Interaction Coverage* section. Only after this round may you proceed to step 8.
+
+8. **Plan implementation**
    - Turn the audit into a parity matrix: competitor behavior, target implementation, API mapping, readiness, risk, acceptance criteria.
    - Prioritize by user workflow impact: primary path first, then result / post-action behavior, history, secondary pages, SEO / support pages.
    - Split work into "can implement now" and "needs API / integration / data preparation"; do not present blocked backend work as ready.
@@ -92,6 +114,9 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
 - Result / post-action: download, save to library, edit / extend, share, metadata, related items, source attribution.
 - Backend mismatch: UI fields not sent, sent fields not documented, fake enabled buttons for unsupported APIs, missing auth / quota / polling / webhooks.
 - Mobile details: sticky CTA, bottom nav, no horizontal overflow, toolbars wrapping cleanly, text fitting inside controls, hit-target sizing.
+- Hover-only reveals, keyboard shortcuts (`?` / `/` / `ctrl+k`), right-click menus, drag-and-drop reorder — invisible without the step-4 hidden-states pass.
+- Network failure UX, offline state, slow-network skeletons — invisible until DevTools is throttled.
+- URL / history behavior: deep-link, refresh mid-flow, back / forward across modes — invisible without navigating.
 
 ## Output
 
@@ -99,11 +124,13 @@ Pick by depth:
 
 - **Quick audit** (≤ 1h, single page or single workflow): use [quick-audit-template.md](references/quick-audit-template.md).
 - **Implementation-ready audit**: use [output-template.md](references/output-template.md).
-- **Coverage self-check** during Workflow steps 3–5: load [parity-checklist.md](references/parity-checklist.md).
+- **Coverage self-check** during Workflow steps 3–7: load [parity-checklist.md](references/parity-checklist.md).
 
 Every deliverable, regardless of depth, must include:
 
 - Evidence summary with screenshot paths and source URLs.
+- Interactive inventory (`evidence/interactive-inventory.md`) with stable IDs.
+- Interaction coverage block: `enumerated N · probed M · coverage M/N (X%)` plus hidden-state pass status and reflection-round results.
 - UI / component inventory.
 - Interaction behavior matrix.
 - API / backend mapping table (or `no backend work in scope` if research-only).

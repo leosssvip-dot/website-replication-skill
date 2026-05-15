@@ -25,6 +25,28 @@ Only include redacted evidence. Do not expose cookies, authorization headers, se
 | Focused component screenshot |  | observed |  |  |
 | DOM / text dump |  | observed |  |  |
 | Network log / API trace |  | observed |  |  |
+| Interactive inventory | `evidence/interactive-inventory.md` | observed |  | DOM-enumerated, stable IDs |
+
+### Interaction Coverage
+
+| Metric | Value |
+| --- | --- |
+| Interactive elements enumerated | N |
+| Probed | M |
+| Coverage | M / N (X%) |
+| Hidden-state passes completed | hover · keyboard · right-click · drag · scroll · input-edge · network · url-history · multi-window |
+
+Coverage below 90% without a `blocked` reason is **not acceptable** — list un-probed elements and the reason here before finalizing.
+
+#### Reflection round
+
+Three things most likely to have been missed (per Workflow step 7), and the result of probing each:
+
+| # | Suspected miss | Probed result |
+| --- | --- | --- |
+| 1 |  | observed / inferred / blocked / confirmed-absent |
+| 2 |  | observed / inferred / blocked / confirmed-absent |
+| 3 |  | observed / inferred / blocked / confirmed-absent |
 
 ## 3. Executive Gap Summary
 
@@ -189,6 +211,9 @@ flowchart LR
 
 - [ ] Screenshot evidence captured for competitor and target.
 - [ ] Evidence is redacted; no secrets, private data, or one-time URLs.
+- [ ] Interactive inventory generated via DOM enumeration; coverage M / N ≥ 90% or gaps justified.
+- [ ] All hidden-state passes completed or marked `not applicable` with reason.
+- [ ] Reflection round (3 likely-missed candidates) probed and recorded.
 - [ ] Component inventory complete.
 - [ ] Interaction matrix covers small controls and post-submit actions.
 - [ ] API mapping separates observed / documented / inferred / blocked / missing.

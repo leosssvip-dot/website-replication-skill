@@ -25,6 +25,26 @@ Filled against [../references/output-template.md](../references/output-template.
 | Mobile screenshot — dashboard | `evidence/mobile-dashboard.png` | observed | username masked | iPhone 14 viewport |
 | DOM / text dump — task detail | `evidence/dom-task-detail.html` | observed | task body + comments stripped | only structural markers kept |
 | Network log — task CRUD | `evidence/network-tasks.har` | observed | `Authorization`, `Cookie`, user IDs redacted | auth class only |
+| Interactive inventory | `evidence/interactive-inventory.md` | observed | n/a | 87 stable IDs across 5 pages |
+
+### Interaction Coverage
+
+| Metric | Value |
+| --- | --- |
+| Interactive elements enumerated | 87 |
+| Probed | 82 |
+| Coverage | 82 / 87 (94%) |
+| Hidden-state passes completed | hover · keyboard · right-click · drag · scroll · input-edge · network · url-history · multi-window |
+
+5 un-probed elements: all on the paid Automations page (`acme-auto-01..05`), marked `blocked` — free-tier account cannot reach the surface.
+
+#### Reflection round
+
+| # | Suspected miss | Probed result |
+| --- | --- | --- |
+| 1 | "Saved filter" persistence after logout / re-login | `observed` — saved filters survive session via server-side `user_preferences` table |
+| 2 | Bulk actions on multi-selected tasks | `observed` — `shift+click` selects range, exposes toolbar with archive / assign / label |
+| 3 | Error recovery when offline submitting a comment | `observed` — queued in `localStorage`, retried on reconnect with a toast |
 
 ## 3. Executive Gap Summary
 

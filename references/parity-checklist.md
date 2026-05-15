@@ -2,7 +2,7 @@
 
 ## When To Load
 
-Load this checklist during Workflow steps 3–5 of SKILL.md as a *coverage self-check* — not as a sequential to-do. Read once you have at least one round of screenshots and a draft interaction matrix; use it to spot what you missed before writing the final deliverable.
+Load this checklist during Workflow steps 3–7 of SKILL.md as a *coverage self-check* — not as a sequential to-do. Read once you have at least one round of screenshots, a generated interactive inventory, and a draft interaction matrix; use it to spot what you missed before writing the final deliverable.
 
 Skip items that do not apply to the competitor's product category and say so in the report rather than leaving them unmarked.
 
@@ -43,6 +43,21 @@ Mark claim source: `observed`, `documented`, or `inferred`.
 - Submission: disabled criteria, auth redirect, quota / paywall gate, loading / progress, cancellation.
 - Async tasks: pending polling, webhook completion, retry, timeout, failed state.
 - Results / post-submit: preview, variants, download, save, edit / extend, share, metadata, history.
+
+## Hidden States And Coverage
+
+- Hover-only reveals: tooltips, popovers, secondary actions, helper text.
+- Focus and tab order: traps, skip links, visible focus rings, logical sequence.
+- Keyboard shortcuts: `?` help · `/` search · `ctrl/cmd+k` palette · `esc` close · `enter` submit · arrow keys · undo / redo.
+- Right-click / long-press context menus on content area and list items.
+- Drag / drop / reorder, including cross-container moves.
+- Scroll-triggered: infinite scroll, lazy load, sticky elements, back-to-top, nested scroll containers.
+- Input edge cases: empty submit, max length, paste formatted, paste disallowed chars, IME composition, disabled-state attempts.
+- Network states: slow 3G skeletons, offline, 5xx, timeout — including recovery affordances.
+- URL / history: deep link, refresh mid-flow, back / forward across modes, new-tab on list item.
+- Multi-window / cross-tab sync where state is shared (carts, drafts, notifications).
+- Coverage report present: `enumerated N · probed M · coverage M/N (X%)`; gaps under 90% justified.
+- Reflection round: three "most likely missed" candidates probed and reported.
 
 ## API And Backend
 
