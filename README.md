@@ -14,6 +14,34 @@ An **agent-harness-agnostic** skill that audits any reference website or web app
 
 **Status**: stable templates · domain-agnostic · works for SaaS, e-commerce, content, collaboration, AI tools, marketplaces, and internal tools.
 
+### What This Skill Replicates — and What It Does NOT
+
+> **Read this before installing.** The word *replication* in the name routinely gets misread as "1:1 visual clone". It is not.
+
+**Replicates** (product behavior parity):
+
+- Workflow logic and step sequences
+- Field structure, form composition, validation rules
+- State transitions (loading, success, error, gated, paid)
+- Interaction patterns (what each button does, what each menu reveals)
+- API capability mapping (endpoints, payload shape, async patterns)
+- Data model and entity relationships
+
+**Does NOT pixel-clone** (intentionally, by design):
+
+- Logos, brand marks, distinctive iconography
+- Exact verbatim copy / wording
+- Distinctive page composition and visual rhythm
+- The reference site's specific color palette, typography, spacing values, radius scale
+- Proprietary imagery, illustrations, photography
+- Class names, design-system tokens (extracted only as *reference*, not as values to paste)
+
+If you expect the output to *look* like the reference site — same colors, same fonts, near-identical layout — **the skill will not give you that, and that is the correct behavior**. Every workflow step pushes the result toward your target product's own brand: HTML/CSS examples use *your* tokens, `design-tokens.js` outputs are reference material (not values to paste), the `Differentiation preference` knob's three options all preserve some level of intentional visual difference.
+
+**Why**: trademark, trade dress, and the "look and feel" doctrine make pixel-cloning a real legal exposure. The skill treats that risk as the user's, not its own, and refuses to amplify it. See *Ethics & Legal* below.
+
+**If you genuinely need higher visual fidelity** (internal clone of your own legacy product, partner integration where contracts permit it, you have explicit license), open an issue. A future `visual-fidelity-priority` mode may be added under explicit IP-risk acknowledgement, but the safe default will remain behavior-only.
+
 ### Ethics & Legal
 
 This skill replicates **product behavior** (workflows, field structure, state handling, API capability mapping). It does **not** authorize you to:
@@ -178,13 +206,41 @@ Please do **not** submit:
 
 ### 简介
 
-**与 agent harness 无关**的 skill，可在任意支持加载 markdown skill + 浏览器 MCP 工具的 agent 框架里运行。已在 **Claude Code** 与 **OpenAI Codex** 上验证；其它框架（Cursor / Continue / Aider / 自研 harness 等）按下方"Other agent harnesses"段 symlink 或 copy 即可。
+**与 agent harness 无关**的 skill，可在任意支持加载 markdown skill + 浏览器 MCP 工具的 agent 框架里运行。已在 **Claude Code** 与 **OpenAI Codex** 上实测；其它符合条件的框架（参考下方 "Other agent harnesses" 段三条要求）按 symlink 或 copy 引入即可——是否真的兼容请自行验证后反馈。
 
 用于审计任意参考网站或 Web 应用，产出一份覆盖 UI、交互、API 契约、数据模型、架构的**差异化对等实施方案** —— 而不复制受保护的表达。
 
 **典型场景**：竞品对标 · 复刻自家旧版产品 · 学习合作方集成行为 · 审计灵感来源。
 
 **状态**：模板已稳定 · 不绑定具体行业 · 适用 SaaS、电商、内容、协作、AI 工具、Marketplace、内部工具。
+
+### 这个 skill 复刻什么、不复刻什么
+
+> **安装前请先读这段。** 名字里 "replication" 经常被误读成"像素级 1:1 克隆"。不是。
+
+**会复刻**（产品行为对等）：
+
+- 工作流逻辑与步骤顺序
+- 字段结构、表单组成、validation 规则
+- 状态切换（loading / success / error / gated / paid）
+- 交互模式（每个按钮做什么、每个菜单展开什么）
+- API 能力映射（endpoint、payload 形状、异步模式）
+- 数据模型与实体关系
+
+**不会做视觉 1:1 克隆**（**故意的设计选择**）：
+
+- logo、品牌标识、独特图标
+- 一字不差的原文文案
+- 独创性页面构图、视觉节奏
+- 参考站独特的配色、字体、间距值、圆角 scale
+- 专有插画、摄影、图像
+- class 名、设计系统 tokens（只作为**参考**抽取，不是直接套用的值）
+
+如果你期待产出**看上去**像参考站（同色、同字体、版式接近），**skill 不会给你这个，而这正是正确行为**。所有工作流步骤都把结果推向你自己产品的品牌：HTML/CSS 示例用*你的* tokens，`design-tokens.js` 输出是参考材料（不是直接套用的值），`Differentiation preference` 三个选项都保留某种程度的有意视觉差异。
+
+**为什么**：商标、商业外观（trade dress）、"look and feel"原则让像素级克隆面临真实诉讼风险。skill 把这个风险视为用户自担，并拒绝放大它。详见下方*法律与伦理*段。
+
+**如果你确实需要更高视觉保真度**（内部复刻自家旧版、合同明确允许的合作方集成、有显式授权），开 issue。未来可能加 `visual-fidelity-priority` 模式，但需要使用者书面承担 IP 风险责任；**默认值仍是行为级复刻**。
 
 ### 法律与伦理
 
