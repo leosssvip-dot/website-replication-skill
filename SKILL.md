@@ -1,7 +1,7 @@
 ---
 name: website-replication-skill
-version: 0.3.0
-description: Audit a reference website or web app and produce a differentiated parity plan covering UI, interactions, API contracts, data model, and architecture. Use when benchmarking a competitor, replicating a legacy or partner site, matching product capabilities, reproducing workflow behavior with original branding, or auditing missing UI/function/API details.
+version: 0.4.0
+description: Audit a reference website or web app and produce a differentiated parity plan with page region relationships, PRD requirements, UI, interactions, API contracts, data model, and architecture. Use when benchmarking a competitor, replicating a legacy or partner site, matching product capabilities, reproducing workflow behavior with original branding, or auditing missing UI/function/API details.
 ---
 
 # Website Replication
@@ -62,6 +62,7 @@ Collect or infer:
 - Existing codebase path, if rebuilding into a repo.
 - Existing API docs, integration docs, schemas, or backend constraints.
 - Differentiation preference: "workflow parity with original style", "same features with target design system", or "research only".
+- Desired output depth: quick audit, implementation-ready audit, or PRD handoff.
 
 If any input is unavailable, proceed with explicit assumptions and mark unknowns. Do not block unless the task requires authenticated data, paid access, or private target-system details that cannot be simulated safely. Without a target repo, integration docs, or API constraints, produce research and a gap plan only; do not claim the result is implementation-ready.
 
@@ -110,15 +111,23 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - Produce HTML/CSS examples *using the target brand's own tokens and copy*, demonstrating only the structural pattern (e.g. flex layout with left icon + label). Do not paste competitor class names, exact spacing values, or copy.
    - Keep UI differentiation intentional: preserve interaction logic and field structure while changing branding, copy, imagery, and visual rhythm.
 
-3. **Enumerate and probe interactions**
+3. **Model page regions and relationships**
+   - Before interaction probing, create a Page Region Relationship Model using [references/region-model-template.md](references/region-model-template.md). A region is a semantic responsibility boundary, not just a visual box: generator panel, result panel, history list, editor canvas, checkout summary, settings drawer, preview area, etc.
+   - Assign stable `Z*` IDs to every major region. Use screenshot position, DOM landmarks, accessibility tree, inventory IDs, and bounding boxes as evidence.
+   - For each region, capture: purpose, owned state, consumed state, emitted events, updated regions, empty/loading/error/success states, responsive behavior, source, and confidence.
+   - Model cross-region dependencies explicitly. Example: `Z1 Generator Panel -> submit payload -> Z2 Results Panel -> loading/result/error`; `Z3 History -> restore job -> Z1 form + Z2 result`.
+   - Treat shared/gating state as its own dependency when it controls multiple regions: auth, credits, selected item, current job, cart, permissions, workspace, filters.
+   - Implementation-ready audits must include a region relationship table and at least one graph or state machine. If relationships are unknown, mark `inferred` or `blocked`; do not omit them.
+
+4. **Enumerate and probe interactions**
    - **Enumerate first, click second.** Run [references/dom-enumeration.js](references/dom-enumeration.js) via the browser-MCP eval call (or paste into DevTools console). Save the markdown output to `audit/<site-slug>/snapshots/<date>/<page-slug>-inventory.md`, following [references/inventory-template.md](references/inventory-template.md). The script handles selector priority, shadow-DOM piercing, and `cursor:pointer` detection — do not re-invent the enumeration logic.
-   - Walk the inventory by ID. For each row fill in `Probed` (`✓` clicked / `o` observed-by-URL-or-attribute / `✗` skipped), `Result` (action + outcome + network call observed + `observed` / `inferred` / `blocked` tag), and `Notes`. Do not skip an ID without writing a reason in `Result`.
+   - Walk the inventory by ID. First map each row to a `Z*` region. Then fill in `Probed` (`✓` clicked / `o` observed-by-URL-or-attribute / `✗` skipped), `Result` (action + outcome + network call observed + `observed` / `inferred` / `blocked` tag), and `Notes`. Do not skip an ID without writing a reason in `Result`.
    - **For each non-trivial state change** (modal open, drawer expand, mode switch, post-submit), run [references/dom-distill.js](references/dom-distill.js) before and after, then diff with [references/state-diff.js](references/state-diff.js): `node references/state-diff.js before.md after.md`. The diff output goes into `Result` — replaces ad-hoc narration with deterministic added/removed lists.
    - Treat icon-only and visually-decorative-looking controls as functional until proven otherwise. Save / clear / copy / expand / randomize / regenerate / share / more — probe each individually.
    - For each interaction also record: validation, disabled state, loading state, optimistic update, error, success output, post-submit action, auth / permission redirect, paywall / quota behavior, and mobile sticky behavior.
    - If the page is dynamic, re-run the enumeration script after each major state change (mode switch, modal open, post-submit). Append the new rows below the existing ones with a `<!-- After <state change> -->` divider.
 
-4. **Probe hidden states**
+5. **Probe hidden states**
 
    Run each pass once per primary page; mark `not applicable` for any that genuinely don't apply. Skipping this step is the #1 source of parity gaps.
 
@@ -132,7 +141,7 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - **URL / history**: deep-link directly into a state · back / forward across modes · refresh mid-flow · open in new tab from a list item.
    - **Multi-window / cross-tab**: where state is shared (carts, drafts, notifications), open a second tab and probe sync direction.
 
-5. **Audit API and backend capability**
+6. **Audit API and backend capability**
    - Capture observed network calls with method, route pattern, headers / auth class, redacted payload shape, response shape, status code, error class.
    - Run [references/network-cluster.js](references/network-cluster.js) over the captured request list: `node references/network-cluster.js requests.txt`. The script clusters by `host + path-pattern + method`, generalizes IDs / UUIDs / tokens, and flags RPC-batched endpoints (carrying `rpcids` or similar sub-keys), likely polling, real-time channels, and telemetry hosts. Use its output as the first draft of the *Observed endpoints* table — verify each cluster manually before publishing.
    - Read official / API / integration docs when available. Separate `observed`, `documented`, and `inferred` claims.
@@ -140,19 +149,24 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - Identify missing endpoints, third-party integrations, auth / permissions, file upload / storage, background jobs, async completion (polling / webhook), billing / quota, rate limits, and persistence / history.
    - Never delete product features because an API or integration is missing. Mark the gap, search docs when allowed, and propose the backend / API preparation needed.
 
-6. **Model data and architecture**
+7. **Model data and architecture**
    - Draft core entities suited to the competitor's domain. Adjust to product type: SaaS, e-commerce, content, collaboration, AI tool, marketplace, internal tool, etc.
    - Output ER and status-machine diagrams when data or async tasks matter.
    - Recommend architecture only after API and data needs are known: frontend framework, server / API layer, queue, database, object storage, cache, auth, billing, third-party integrations, observability.
+   - Cross-check data entities against region state ownership. If a region owns durable state, identify where that state is stored or mark it as a target-side requirement.
 
-7. **Reflect and verify coverage** *(mandatory before step 8)*
+8. **Reflect and verify coverage** *(mandatory before step 9)*
    - Run [references/coverage.js](references/coverage.js) against each per-page inventory: `node references/coverage.js audit/<site>/snapshots/<date>/<page>-inventory.md [--threshold=90]`. The script parses the `Probed` column, counts `✓` / `o` / `✗`, computes coverage, and **exits non-zero** if coverage < threshold and any un-probed row lacks a `blocked` reason. This is the formal gate — agent self-reporting is not.
-   - If coverage.js exits non-zero, return to step 3 against the IDs it listed; do not advance to step 8.
+   - If coverage.js exits non-zero, return to step 4 against the IDs it listed; do not advance to step 9.
    - Ask explicitly: *"Given this product category, what are the three things I am most likely to have missed?"* Write the three candidates down — common blind spots: post-success states, error recovery paths, settings / preferences, history / undo, sharing / export, mobile-only affordances, paid-tier hints visible to free users — then probe each and record the result.
    - Re-check the inventory against the rendered DOM after the final state. Any new elements added by interactions (modal contents, drawer contents, expanded panels) must be enumerated and probed.
-   - Record results in the deliverable's *Interaction Coverage* section. Only after this round may you proceed to step 8.
+   - Re-check the region model: every major region has a purpose, owned/consumed state, emitted events, and at least one relationship or an explicit `not applicable` reason.
+   - Record results in the deliverable's *Interaction Coverage* and *Region Model Coverage* sections. Only after this round may you proceed to step 9.
 
-8. **Plan implementation**
+9. **Produce PRD and plan implementation**
+   - For implementation-ready work, write a Replication PRD using [references/prd-template.md](references/prd-template.md). The PRD is the handoff artifact; the audit report is evidence.
+   - Convert the region model into region contracts: visible conditions, state ownership, consumed state, emitted events, update targets, UI requirements, behavior requirements, and acceptance criteria.
+   - Convert cross-region dependencies into interaction contracts with stable IDs (`C1`, `C2`, ...). Each contract must name trigger region, trigger event, target region, state change, API/data dependency, and acceptance.
    - Turn the audit into a parity matrix: competitor behavior, target implementation, API mapping, readiness, risk, acceptance criteria.
    - Prioritize by user workflow impact: primary path first, then result / post-action behavior, history, secondary pages, SEO / support pages.
    - Split work into "can implement now" and "needs API / integration / data preparation"; do not present blocked backend work as ready.
@@ -170,6 +184,8 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
 - Hover-only reveals, keyboard shortcuts (`?` / `/` / `ctrl+k`), right-click menus, drag-and-drop reorder — invisible without the step-4 hidden-states pass.
 - Network failure UX, offline state, slow-network skeletons — invisible until DevTools is throttled.
 - URL / history behavior: deep-link, refresh mid-flow, back / forward across modes — invisible without navigating.
+- Region relationship gaps: input panel and output panel documented separately but no state/event contract between them; history or selection panels not mapped back to the editor/form/result regions.
+- PRD gaps: audit findings listed without implementation requirements, acceptance criteria, region contracts, responsive rules, or testable cross-region interactions.
 
 ## Configuration
 
@@ -183,6 +199,7 @@ Defaults are tuned for the common case. The user may override any in their reque
 | Differentiation direction | (must be specified or assumed) | `workflow parity with original style` / `same features with target design system` / `research only`. |
 | Viewport set | `desktop-1440`, `mobile-iphone14` | Add `tablet-ipad`, larger desktop, or specific device profiles when the product targets them. |
 | Reflection round size | 3 candidates | Raise to 5+ for unfamiliar product categories. |
+| PRD required | true for implementation-ready audits | Disable only for research-only or quick audits. |
 
 ## Troubleshooting
 
@@ -194,8 +211,10 @@ Defaults are tuned for the common case. The user may override any in their reque
 | Network panel shows no requests for an obviously remote action | Call uses WebSocket, Server-Sent Events, or `navigator.sendBeacon` | Switch DevTools to "All" not "Fetch/XHR"; capture WS frames; tag as `observed (via WS)` or `observed (via beacon)`. |
 | Authenticated state required but credentials unavailable | Paid / SSO / private surface | Mark `blocked` in the parity matrix; do not bypass auth. Use public docs to fill `documented` rows. |
 | `MANIFEST.md` missing on first run | Expected — no prior audit | Create with the header from [references/manifest-template.md](references/manifest-template.md); append rows as you capture. |
-| Coverage below 90% with no `blocked` reason | Step 3 was skipped or rushed | Return to step 3 against the unfilled IDs; do not submit the deliverable yet. |
-| Reflection round (step 7) produces no concrete misses | Agent saturated on existing report content | Use [references/parity-checklist.md](references/parity-checklist.md) "Hidden States And Coverage" — pick the first three items still unticked. |
+| Coverage below 90% with no `blocked` reason | Step 4 was skipped or rushed | Return to step 4 against the unfilled IDs; do not submit the deliverable yet. |
+| Reflection round (step 8) produces no concrete misses | Agent saturated on existing report content | Use [references/parity-checklist.md](references/parity-checklist.md) "Hidden States And Coverage" — pick the first three items still unticked. |
+| Region model says "left panel / right panel" but no relationship | Agent labeled layout instead of responsibility | Rewrite regions as responsibilities: input/config, output/result, history/restore, gating/auth. Fill ownership, dependencies, events, and updates. |
+| PRD is a gap list, not a build spec | Output template used without PRD handoff | Load [references/prd-template.md](references/prd-template.md) and convert every important region relationship into a testable requirement. |
 | Screenshots tracked into git accidentally show PII | Reviewer skipped the redaction pass | Untrack with `git rm --cached <path>`, sanitize, re-commit. See *Evidence Safety*. Long-term: switch the consumer project's `.gitignore` block to the single `audit/` line. |
 
 ## Token Budget
@@ -223,16 +242,19 @@ What's already enforced by the skill's artefacts:
 Pick by depth:
 
 - **Quick audit** (≤ 1h, single page or single workflow): use [quick-audit-template.md](references/quick-audit-template.md).
-- **Implementation-ready audit**: use [output-template.md](references/output-template.md).
-- **Coverage self-check** during Workflow steps 3–7: load [parity-checklist.md](references/parity-checklist.md).
+- **Implementation-ready audit**: use [output-template.md](references/output-template.md) and [prd-template.md](references/prd-template.md).
+- **Region modeling**: use [region-model-template.md](references/region-model-template.md) for every implementation-ready audit.
+- **Coverage self-check** during Workflow steps 4–8: load [parity-checklist.md](references/parity-checklist.md).
 
 Every deliverable, regardless of depth, must include:
 
 - Evidence summary with screenshot paths and source URLs.
 - Interactive inventory (`evidence/interactive-inventory.md`) with stable IDs.
 - Interaction coverage block: `enumerated N · probed M · coverage M/N (X%)` plus hidden-state pass status and reflection-round results.
+- Page region relationship model with `Z*` IDs, ownership, dependencies, emitted events, updates, responsive behavior, and source/confidence.
 - UI / component inventory.
 - Interaction behavior matrix.
 - API / backend mapping table (or `no backend work in scope` if research-only).
+- Replication PRD for implementation-ready audits, with region contracts and cross-region interaction contracts.
 - Prioritized gap list separating "can implement now" vs "needs API / integration / data preparation".
 - Verification checklist.

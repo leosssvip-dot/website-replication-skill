@@ -54,43 +54,67 @@ All evidence must be redacted: no cookies, auth headers, tokens, account IDs, cu
 | --- | --- | --- | --- |
 |  |  | matched / different / missing / blocked |  |
 
-## 4. Interaction Matrix
+## 4. Region Relationship Snapshot
+
+Keep this short, but do not skip it. The goal is to capture how areas of the page work together.
+
+| Zone ID | Region | Purpose | Owns State | Consumes State | Emits Events | Updates |
+| --- | --- | --- | --- | --- | --- | --- |
+| Z1 |  |  |  |  |  |  |
+| Z2 |  |  |  |  |  |  |
+
+```mermaid
+flowchart LR
+  Z1["Z1 Input / Control"] -->|"event / data"| Z2["Z2 Output / Result"]
+```
+
+## 5. Interaction Matrix
 
 List actual user actions in scope. Replace example rows; do not ship the template stubs.
 
-| User Action | Competitor Result | Target Status | Source | Notes |
-| --- | --- | --- | --- | --- |
-| Primary CTA |  |  | observed / inferred |  |
-| Mode / tab switch |  |  | observed / inferred |  |
-| Secondary action |  |  | observed / inferred |  |
-| Submit / confirm |  |  | observed / inferred |  |
-| Post-submit / result |  |  | observed / inferred |  |
-| Gated state |  |  | observed / inferred |  |
+| User Action | Source Region | Target Region | Competitor Result | Target Status | Source | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| Primary CTA | Z1 | Z2 |  |  | observed / inferred |  |
+| Mode / tab switch |  |  |  |  | observed / inferred |  |
+| Secondary action |  |  |  |  | observed / inferred |  |
+| Submit / confirm |  |  |  |  | observed / inferred |  |
+| Post-submit / result |  |  |  |  | observed / inferred |  |
+| Gated state |  |  |  |  | observed / inferred |  |
 
-## 5. API / Backend Notes
+## 6. API / Backend Notes
 
 Skip the table and write `no backend work in scope` if research-only.
 
-| Feature | Observed Call (redacted) | Auth Class | Target Mapping | Status |
-| --- | --- | --- | --- | --- |
-|  | METHOD route, payload shape |  |  | implemented / partial / missing / blocked |
+| Feature | Region / Contract | Observed Call (redacted) | Auth Class | Target Mapping | Status |
+| --- | --- | --- | --- | --- | --- |
+|  | Z1 / C1 | METHOD route, payload shape |  |  | implemented / partial / missing / blocked |
 
-## 6. Gap List
+## 7. PRD Slice
 
-| Priority | Gap | Readiness | Recommendation |
+For quick audits, write only the requirements needed for the primary workflow.
+
+| Requirement | Region(s) | Acceptance | Readiness |
 | --- | --- | --- | --- |
-| P0 |  | can implement now / needs preparation |  |
-| P1 |  | can implement now / needs preparation |  |
-| P2 |  | can implement now / needs preparation |  |
+|  | Z1, Z2 |  | can implement now / needs preparation |
 
-## 7. Verification Checklist
+## 8. Gap List
+
+| Priority | Gap | Region / Contract | Readiness | Recommendation |
+| --- | --- | --- | --- | --- |
+| P0 |  |  | can implement now / needs preparation |  |
+| P1 |  |  | can implement now / needs preparation |  |
+| P2 |  |  | can implement now / needs preparation |  |
+
+## 9. Verification Checklist
 
 - [ ] Screenshots saved (desktop + mobile).
 - [ ] Evidence is redacted.
 - [ ] Interactive inventory generated; coverage ≥ 90% or gaps justified.
 - [ ] Hidden-state passes done or marked `not applicable`.
 - [ ] Reflection round (3 candidates) probed.
+- [ ] Region relationship snapshot includes `Z*` IDs, owned state, consumed state, emitted events, and updates.
 - [ ] Interaction matrix covers small / icon-only controls.
 - [ ] API status separates observed / documented / inferred / blocked / missing.
+- [ ] PRD slice contains testable acceptance criteria.
 - [ ] Gap list splits "can implement now" vs "needs preparation".
 - [ ] No competitor logo, copy, or distinctive composition copied into target.

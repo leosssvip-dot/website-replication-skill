@@ -2,7 +2,7 @@
 
 ## When To Load
 
-Load this checklist during Workflow steps 3–7 of SKILL.md as a *coverage self-check* — not as a sequential to-do. Read once you have at least one round of screenshots, a generated interactive inventory, and a draft interaction matrix; use it to spot what you missed before writing the final deliverable.
+Load this checklist during Workflow steps 3–8 of SKILL.md as a *coverage self-check* — not as a sequential to-do. Read once you have at least one round of screenshots, a page region model, a generated interactive inventory, and a draft interaction matrix; use it to spot what you missed before writing the final deliverable.
 
 Skip items that do not apply to the competitor's product category and say so in the report rather than leaving them unmarked.
 
@@ -43,6 +43,18 @@ Mark claim source: `observed`, `documented`, or `inferred`.
 - Submission: disabled criteria, auth redirect, quota / paywall gate, loading / progress, cancellation.
 - Async tasks: pending polling, webhook completion, retry, timeout, failed state.
 - Results / post-submit: preview, variants, download, save, edit / extend, share, metadata, history.
+
+## Page Region Relationships
+
+- Every major area has a semantic `Z*` region ID, not just a visual label.
+- Each region has a product purpose: collect input, configure options, preview output, show results, restore history, gate access, navigate, summarize, edit, checkout, etc.
+- Input/control regions list owned state and emitted events.
+- Output/result regions list consumed state and update triggers.
+- Shared state is modeled separately when it affects multiple regions: auth, credits, selected item, current job, workspace, filters, cart, permissions.
+- The primary workflow has a region dependency chain, e.g. `Z1 input -> submit payload -> API/job -> Z2 result`.
+- Reverse relationships are captured where present: edit result, restore history, regenerate, select item, apply filter.
+- Responsive behavior preserves or intentionally changes region responsibilities.
+- Unknown relationships are marked `inferred` or `blocked`, not omitted.
 
 ## Hidden States And Coverage
 
@@ -89,10 +101,21 @@ Mark claim source: `observed`, `documented`, or `inferred`.
 - Observability: logs, metrics, external-call payload capture without secrets.
 - Security: secret handling, customer data, ownership checks, abuse controls.
 
+## PRD Handoff
+
+- PRD exists for implementation-ready work.
+- Each `Z*` region has a requirement contract.
+- Each cross-region dependency has a stable contract ID.
+- Region contracts include visible conditions, owned state, consumed state, emitted events, updates, and empty/loading/error/success states.
+- API and data contracts reference the relevant region or contract ID.
+- Acceptance criteria are testable and not just descriptive.
+- Blocked work is separated from ready implementation work.
+
 ## Verification
 
 - Unit / component tests for every new control behavior.
 - Payload contract tests for every submitted field.
+- Region relationship tests for primary cross-region contracts.
 - API route tests for validation, auth, and failure paths.
 - Browser screenshots for desktop and mobile.
 - DOM checks: no overflow, expected controls visible, forbidden copied tokens / assets absent.

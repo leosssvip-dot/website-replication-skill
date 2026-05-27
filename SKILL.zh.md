@@ -26,7 +26,7 @@
 
   Commit 截图前必须肉眼审一遍 PII（用户名、邮箱、客户内容、内部 ID）。需要最严的隐私时，整段替换成一行 `audit/`。
 
-## Workflow（八步）
+## Workflow（九步）
 
 1. **定义范围与证据**
    - 列出所有 in-scope 页面、路由、tab、mode、drawer、modal、submit 后状态。
@@ -43,15 +43,25 @@
    - 用**目标产品自己的 token 与文案**写 HTML/CSS 示例，仅演示结构模式（如 icon + label 的 flex 布局）。不要粘竞品 class 名、精确间距、文案。
    - UI 差异化是有意为之：保留交互逻辑与字段结构，改 branding / 文案 / 图像 / 视觉节奏。
 
-3. **枚举并探测交互**
+3. **建模页面区域与关系**
+
+   在交互探测前，先用 [references/region-model-template.md](references/region-model-template.md) 建 Page Region Relationship Model。区域不是视觉盒子，而是语义职责边界：生成工具框、结果展示区、历史列表、编辑画布、结算摘要、设置抽屉、预览区等。
+
+   - 给每个主要区域分配稳定 `Z*` ID。证据来自截图位置、DOM landmark、a11y tree、inventory ID、bounding box。
+   - 每个区域必须写：purpose、owned state、consumed state、emitted events、updated regions、empty/loading/error/success states、responsive behavior、source、confidence。
+   - 显式建模跨区域依赖。例如：`Z1 Generator Panel -> submit payload -> Z2 Results Panel -> loading/result/error`；`Z3 History -> restore job -> Z1 form + Z2 result`。
+   - auth、credits、selected item、current job、cart、permissions 等影响多个区域的共享 / gating state，要作为独立依赖处理。
+   - implementation-ready audit 必须有 region relationship table，且至少有一个关系图或状态机。未知关系标 `inferred` 或 `blocked`，不要省略。
+
+4. **枚举并探测交互**
    - **先枚举，再点击**。在浏览器自动化里跑 [references/dom-enumeration.js](references/dom-enumeration.js)（DevTools 控制台 eval 或 browser-MCP 的 eval 接口）。markdown 输出保存为 `audit/<site-slug>/snapshots/<date>/<page-slug>-inventory.md`，格式见 [references/inventory-template.md](references/inventory-template.md)。脚本已处理选择器优先级、shadow DOM 穿透、`cursor:pointer` 探测，**不要自己重新发明枚举逻辑**。
-   - 按 ID 逐行走 inventory。每行填 `Probed`（`✓` 点过 / `o` URL/属性观察 / `✗` 跳过）、`Result`（动作 + 结果 + 观察到的网络调用 + `observed` / `inferred` / `blocked` 标签）、`Notes`。跳过任何 ID 都必须在 `Result` 里写原因。
+   - 按 ID 逐行走 inventory。先把每行映射到 `Z*` 区域，再填 `Probed`（`✓` 点过 / `o` URL/属性观察 / `✗` 跳过）、`Result`（动作 + 结果 + 观察到的网络调用 + `observed` / `inferred` / `blocked` 标签）、`Notes`。跳过任何 ID 都必须在 `Result` 里写原因。
    - **每个非平凡状态变化**（modal 打开、drawer 展开、mode 切换、submit 后）前后各跑一次 [references/dom-distill.js](references/dom-distill.js)，再用 [references/state-diff.js](references/state-diff.js) 比对：`node references/state-diff.js before.md after.md`。diff 输出填进 `Result` 列——取代散文描述，让"发生了什么"变成机械结果。
    - icon-only 与看起来装饰性的控件都按"有功能"处理直到反证。save / clear / copy / expand / randomize / regenerate / share / more — 一个一个 probe。
    - 每条交互还要记：validation、disabled、loading、optimistic update、error、success 输出、submit 后动作、auth / permission 重定向、paywall / quota、移动端 sticky。
    - 动态页面在每次重大状态变化（mode 切换、modal 打开、submit 后）后重跑枚举脚本，新行用 `<!-- After <state change> -->` 分隔追加。
 
-4. **探测隐藏状态**
+5. **探测隐藏状态**
 
    每个主页面跑一遍下列 9 类。真不适用的标 `not applicable`。**跳过此步是 parity gap 的第一大来源**。
 
@@ -65,7 +75,7 @@
    - **URL / 历史**：直接 deep-link 进某状态 · 在多个 mode 间 back / forward · 流程进行中 refresh · 列表项右键新标签。
    - **多窗口 / 跨标签**：购物车、草稿、通知等共享状态，开第二个标签看同步方向。
 
-5. **审计 API 与后端能力**
+6. **审计 API 与后端能力**
    - 抓观察到的网络调用：method、route pattern、headers / auth class、脱敏 payload 形状、response 形状、status code、error class。
    - 把请求列表喂给 [references/network-cluster.js](references/network-cluster.js)：`node references/network-cluster.js requests.txt`。脚本按 `host + path-pattern + method` 聚类、自动泛化 ID / UUID / token、识别 RPC-batched 端点（`rpcids` 子键）、长轮询 / 实时通道 / 遥测主机。输出当 *Observed endpoints* 表初稿用，再人工校对每行。
    - 读官方 / API / 集成文档。分清 `observed` / `documented` / `inferred`。
@@ -73,19 +83,23 @@
    - 列出缺失：endpoint、第三方集成、auth / 权限、文件上传 / 存储、后台任务、异步完成（polling / webhook）、计费 / 配额、限流、持久化 / 历史。
    - **不要因 API 或集成缺失就砍产品功能**。标 gap、查文档、提出需要的后端 / API 准备。
 
-6. **建模数据与架构**
+7. **建模数据与架构**
    - 按竞品域草拟核心实体。按产品类型调整：SaaS、电商、内容、协作、AI 工具、marketplace、内部工具。
    - 数据或异步任务重要时，输出 ER 与状态机图。
    - 架构推荐只在 API + 数据需求明确后给：前端框架、服务器 / API 层、队列、数据库、对象存储、缓存、auth、计费、第三方集成、可观测性。
 
-7. **反思并核对覆盖率**（强制 gate，在 step 8 前）
+8. **反思并核对覆盖率**（强制 gate，在 step 9 前）
    - 对每份 per-page inventory 跑 [references/coverage.js](references/coverage.js)：`node references/coverage.js audit/<site>/snapshots/<date>/<page>-inventory.md [--threshold=90]`。脚本解析 `Probed` 列、统计 `✓` / `o` / `✗`、算覆盖率，**覆盖率 < 阈值且有 ✗ 行没写 `blocked` 理由时退出码 ≠ 0**。这是正式 gate，不靠 agent 自报数字。
-   - 脚本退出码 ≠ 0 时，按它列出的 ID 回 step 3 补，不许进 step 8。
+   - 脚本退出码 ≠ 0 时，按它列出的 ID 回 step 4 补，不许进 step 9。
    - 显式问自己：*"鉴于这个产品类型，我最可能漏掉的三件事是什么？"* 写下三个候选 — 常见盲点：submit 成功后状态、错误恢复路径、设置 / 偏好、history / undo、分享 / 导出、移动端专属 affordance、付费层暗示在免费层的可见线索 — 然后 probe 每一个，记录结果。
    - 对照最终态的 DOM 复核 inventory。交互打开的新元素（modal 内容、drawer 内容、展开面板）必须枚举并 probe。
-   - 把结果写进交付物的 *Interaction Coverage* 段。**只有走完这一轮才能进 step 8**。
+   - 复核 region model：每个主要区域都有 purpose、owned/consumed state、emitted events，并至少有一个 relationship 或明确的 `not applicable` 理由。
+   - 把结果写进交付物的 *Interaction Coverage* 与 *Region Model Coverage* 段。**只有走完这一轮才能进 step 9**。
 
-8. **实施规划**
+9. **产出 PRD 并做实施规划**
+   - implementation-ready 工作必须用 [references/prd-template.md](references/prd-template.md) 写 Replication PRD。PRD 是开发交接物；audit report 是证据。
+   - 把 region model 转成 region contracts：visible conditions、state ownership、consumed state、emitted events、update targets、UI requirements、behavior requirements、acceptance criteria。
+   - 把跨区域依赖转成带稳定 ID 的 interaction contracts（`C1`, `C2`...）。每个 contract 必须写 trigger region、trigger event、target region、state change、API/data dependency、acceptance。
    - 把审计结果整成 parity matrix：竞品行为、目标实现、API 映射、就绪度、风险、验收标准。
    - 按用户工作流影响优先级排序：主路径 → 结果 / submit 后行为 → history → 二级页面 → SEO / 支持页。
    - 拆"现在就能实施"与"需要 API / 集成 / 数据准备"两堆。**不要**把被阻塞的后端工作呈现为 ready。
@@ -103,6 +117,8 @@
 - Hover-only 浮出、键盘快捷键（`?` / `/` / `ctrl+k`）、右键菜单、拖拽重排 —— 不跑 step 4 就看不见。
 - 网络失败 UX、offline 态、慢网 skeleton —— 不限速看不见。
 - URL / 历史行为：deep-link、流程中 refresh、多 mode 间 back / forward —— 不导航就看不见。
+- 区域关系漏建模：左侧输入区和右侧结果区分别写了，但没有 state / event contract；history / selection 面板没有映射回 editor / form / result 区域。
+- PRD 漏交付：只有 audit findings，没有可实现需求、验收标准、区域 contracts、响应式规则或可测试的跨区域交互。
 
 ## Configuration（默认值与覆盖时机）
 
@@ -116,6 +132,7 @@
 | 差异化方向 | （必须明示或假设） | `workflow parity with original style` / `same features with target design system` / `research only`。 |
 | Viewport 集 | `desktop-1440`, `mobile-iphone14` | 产品面向 tablet / 大桌面 / 特定设备时增加。 |
 | 反思轮候选数 | 3 个 | 不熟悉的产品品类提到 5+。 |
+| PRD required | implementation-ready audit 默认为 true | research-only 或 quick audit 才能关闭。 |
 
 ## Troubleshooting（常见问题）
 
@@ -127,8 +144,10 @@
 | 网络面板对明显的远程动作没抓到请求 | 走 WebSocket / SSE / `navigator.sendBeacon` | DevTools 过滤切"All"不要"Fetch/XHR"；抓 WS frame；标 `observed (via WS)` 或 `observed (via beacon)`。 |
 | 需要登录态但没凭证 | 付费 / SSO / 私域 | parity matrix 标 `blocked`；不要绕 auth。用公开文档填 `documented` 行。 |
 | 第一次跑没有 `MANIFEST.md` | 正常，新站点 | 用 [references/manifest-template.md](references/manifest-template.md) 的表头新建，边截边追加。 |
-| 覆盖率低于 90% 且无 `blocked` 理由 | step 3 被跳过或赶工 | 回 step 3 把空着的 ID 补完；交付物先别发。 |
-| 反思轮（step 7）说不出具体漏什么 | Agent 在现有内容上饱和了 | 用 [references/parity-checklist.md](references/parity-checklist.md) 的"Hidden States And Coverage"段，挑前三个还没勾的项做。 |
+| 覆盖率低于 90% 且无 `blocked` 理由 | step 4 被跳过或赶工 | 回 step 4 把空着的 ID 补完；交付物先别发。 |
+| 反思轮（step 8）说不出具体漏什么 | Agent 在现有内容上饱和了 | 用 [references/parity-checklist.md](references/parity-checklist.md) 的"Hidden States And Coverage"段，挑前三个还没勾的项做。 |
+| region model 只有"左区 / 右区"但无关系 | Agent 只标了布局，没有标职责 | 改写成职责：input/config、output/result、history/restore、gating/auth，并补 ownership、dependencies、events、updates。 |
+| PRD 只是 gap list | 用了输出模板但没做 PRD handoff | 加载 [references/prd-template.md](references/prd-template.md)，把每个重要区域关系转成可测试需求。 |
 | 截图意外把 PII 进 git | 审脱敏漏了 | `git rm --cached <路径>` 撤掉、脱敏、重新 commit。长期换成单行 `audit/`。 |
 
 ## Token Budget（避免 context 爆炸）
@@ -150,4 +169,3 @@ Skill 本身已强制的保护：
 - `dom-enumeration.js`：limit=500 · label 60 字符截断 · 不返 outerHTML
 - `dom-distill.js`：maxNodes=2000 · maxDepth=10 · 剔除 script/style/SVG · 折叠 wrapper div · 文本 60 字符截断 · 属性 80 字符截断
 - 截图与 DOM dump 都是文件产物，交付物只引路径
-
