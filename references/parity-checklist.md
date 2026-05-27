@@ -56,6 +56,17 @@ Mark claim source: `observed`, `documented`, or `inferred`.
 - Responsive behavior preserves or intentionally changes region responsibilities.
 - Unknown relationships are marked `inferred` or `blocked`, not omitted.
 
+## Region Layout Constraints
+
+- Placement is captured for every major region: top, bottom, left, right, inline, overlay, drawer, modal, or center.
+- Anchor target is identified: viewport, parent container, sibling region, scroll container, or safe area.
+- Positioning mode is identified: normal-flow, sticky / fixed / docked, absolute, floating, or overlay.
+- Sizing rule is captured: fixed, fill, intrinsic, min-max, aspect-ratio, or content-driven.
+- Scroll behavior is captured: scrolls with page, fixed during scroll, sticky within container, or independently scrollable.
+- Layering and containment are captured: inline, overlay, z-layer, backdrop, clipped by parent, reserves space, or overlays content.
+- Responsive transform is captured: two-column -> stacked, side panel -> bottom sheet, toolbar -> bottom bar, drawer -> full-screen, etc.
+- Collision rules are checked: keyboard / safe-area, bottom nav, floating action button, toast, cookie bar, and modal backdrop.
+
 ## Hidden States And Coverage
 
 - Hover-only reveals: tooltips, popovers, secondary actions, helper text.

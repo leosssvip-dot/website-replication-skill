@@ -72,8 +72,30 @@ function checkEnumerationSupportsAppendStartIndex() {
   assert(source.includes(':nth-of-type('), 'fallback selector should disambiguate repeated tag-only controls');
 }
 
+function checkRegionLayoutConstraintsContract() {
+  const required = new Map([
+    ['SKILL.md', ['Region Layout Constraints', 'Anchor Target', 'Positioning Mode', 'Collision Rules']],
+    [
+      'references/region-model-template.md',
+      ['## 3. Region Layout Constraints', '| Region | Placement | Anchor Target | Positioning Mode | Sizing Rule | Scroll Behavior | Layering / Containment | Responsive Transform | Collision Rules | Evidence | Source | Confidence |'],
+    ],
+    ['references/output-template.md', ['### Region Layout Constraints', 'Placement', 'Anchor Target', 'Positioning Mode', 'Collision Rules']],
+    ['references/prd-template.md', ['Layout Constraints:', '- Placement:', '- Anchor target:', '- Positioning mode:', '- Collision rules:']],
+    ['references/quick-audit-template.md', ['Layout Constraints', '| Region | Placement | Anchor | Scroll Behavior | Mobile Transform | Evidence |']],
+    ['references/parity-checklist.md', ['## Region Layout Constraints', 'sticky / fixed / docked', 'keyboard / safe-area']],
+  ]);
+
+  for (const [file, phrases] of required.entries()) {
+    const source = readFileSync(join(root, file), 'utf8');
+    for (const phrase of phrases) {
+      assert(source.includes(phrase), `${file} should include region layout constraint phrase: ${phrase}`);
+    }
+  }
+}
+
 checkJsSyntax();
 checkCoverageReadsAppendedInventorySections();
 checkEnumerationSupportsAppendStartIndex();
+checkRegionLayoutConstraintsContract();
 
 console.log('Skill validation passed');

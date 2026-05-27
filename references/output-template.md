@@ -102,6 +102,12 @@ Use [region-model-template.md](region-model-template.md). Do not stop at visual 
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Z1 |  | screenshot / DOM / inventory IDs |  |  |  |  |  |  | observed / inferred | high / medium / low |
 
+### Region Layout Constraints
+
+| Region | Placement | Anchor Target | Positioning Mode | Sizing Rule | Scroll Behavior | Layering / Containment | Responsive Transform | Collision Rules | Evidence | Source | Confidence |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Z1 | bottom / left / overlay | viewport / parent / sibling / safe area | normal-flow / fixed / sticky / docked | fill / intrinsic / min-max | fixed during scroll / sticky within container / independently scrollable | inline / overlay / z-layer / reserves space | desktop side panel -> mobile bottom sheet | avoids keyboard / safe-area / bottom nav | screenshot + bbox + computed style | observed / inferred | high / medium / low |
+
 ### Region Dependency Matrix
 
 | From Region | Event / Data | To Region | Trigger | Target State Change | API / Storage Dependency | Evidence |
@@ -271,6 +277,7 @@ Use [prd-template.md](prd-template.md) for the full PRD. The PRD is required for
 - [ ] Reflection round (3 likely-missed candidates) probed and recorded.
 - [ ] Page region relationship model completed with `Z*` IDs.
 - [ ] Every major region has purpose, owned state, consumed state, emitted events, updates, and responsive behavior.
+- [ ] Region Layout Constraints captured for desktop and mobile: Placement, Anchor Target, Positioning Mode, Scroll Behavior, Layering / Containment, Responsive Transform, and Collision Rules.
 - [ ] Cross-region contracts exist for the primary user workflow.
 - [ ] Component inventory complete.
 - [ ] Interaction matrix covers small controls and post-submit actions.

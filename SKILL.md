@@ -118,6 +118,7 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - Before interaction probing, create a Page Region Relationship Model using [references/region-model-template.md](references/region-model-template.md). A region is a semantic responsibility boundary, not just a visual box: generator panel, result panel, history list, editor canvas, checkout summary, settings drawer, preview area, etc.
    - Assign stable `Z*` IDs to every major region. Use screenshot position, DOM landmarks, accessibility tree, inventory IDs, and bounding boxes as evidence.
    - For each region, capture: purpose, owned state, consumed state, emitted events, updated regions, empty/loading/error/success states, responsive behavior, source, and confidence.
+   - For each region, capture **Region Layout Constraints**: Placement, Anchor Target, Positioning Mode, sizing rule, scroll behavior, layering / containment, responsive transform, Collision Rules, evidence, source, and confidence. This is where terms like bottom-docked, sticky within container, fixed to viewport, overlay, independently scrollable, safe-area-aware, or keyboard-avoiding belong.
    - Model cross-region dependencies explicitly. Example: `Z1 Generator Panel -> submit payload -> Z2 Results Panel -> loading/result/error`; `Z3 History -> restore job -> Z1 form + Z2 result`.
    - Treat shared/gating state as its own dependency when it controls multiple regions: auth, credits, selected item, current job, cart, permissions, workspace, filters.
    - Implementation-ready audits must include a region relationship table and at least one graph or state machine. If relationships are unknown, mark `inferred` or `blocked`; do not omit them.
@@ -163,12 +164,12 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - If coverage.js exits non-zero, return to step 4 against the IDs it listed; do not advance to step 9.
    - Ask explicitly: *"Given this product category, what are the three things I am most likely to have missed?"* Write the three candidates down — common blind spots: post-success states, error recovery paths, settings / preferences, history / undo, sharing / export, mobile-only affordances, paid-tier hints visible to free users — then probe each and record the result.
    - Re-check the inventory against the rendered DOM after the final state. Any new elements added by interactions (modal contents, drawer contents, expanded panels) must be enumerated and probed.
-   - Re-check the region model: every major region has a purpose, owned/consumed state, emitted events, and at least one relationship or an explicit `not applicable` reason.
+   - Re-check the region model: every major region has a purpose, owned/consumed state, emitted events, Region Layout Constraints, and at least one relationship or an explicit `not applicable` reason.
    - Record results in the deliverable's *Interaction Coverage* and *Region Model Coverage* sections. Only after this round may you proceed to step 9.
 
 9. **Produce PRD and plan implementation**
    - For implementation-ready work, write a Replication PRD using [references/prd-template.md](references/prd-template.md). The PRD is the handoff artifact; the audit report is evidence.
-   - Convert the region model into region contracts: visible conditions, state ownership, consumed state, emitted events, update targets, UI requirements, behavior requirements, and acceptance criteria.
+   - Convert the region model into region contracts: visible conditions, layout constraints, state ownership, consumed state, emitted events, update targets, UI requirements, behavior requirements, and acceptance criteria.
    - Convert cross-region dependencies into interaction contracts with stable IDs (`C1`, `C2`, ...). Each contract must name trigger region, trigger event, target region, state change, API/data dependency, and acceptance.
    - Turn the audit into a parity matrix: competitor behavior, target implementation, API mapping, readiness, risk, acceptance criteria.
    - Prioritize by user workflow impact: primary path first, then result / post-action behavior, history, secondary pages, SEO / support pages.
@@ -184,6 +185,7 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
 - Result / post-action: download, save to library, edit / extend, share, metadata, related items, source attribution.
 - Backend mismatch: UI fields not sent, sent fields not documented, fake enabled buttons for unsupported APIs, missing auth / quota / polling / webhooks.
 - Mobile details: sticky CTA, bottom nav, no horizontal overflow, toolbars wrapping cleanly, text fitting inside controls, hit-target sizing.
+- Layout constraints: sticky / fixed / docked regions, independent scroll containers, overlay vs reserved-space behavior, z-layer and backdrop rules, safe-area insets, keyboard avoidance, and collision with bottom nav / FAB / toast / cookie bars.
 - Hover-only reveals, keyboard shortcuts (`?` / `/` / `ctrl+k`), right-click menus, drag-and-drop reorder — invisible without the step-4 hidden-states pass.
 - Network failure UX, offline state, slow-network skeletons — invisible until DevTools is throttled.
 - URL / history behavior: deep-link, refresh mid-flow, back / forward across modes — invisible without navigating.
@@ -254,7 +256,7 @@ Every deliverable, regardless of depth, must include:
 - Evidence summary with screenshot paths and source URLs.
 - Interactive inventory (`evidence/interactive-inventory.md`) with stable IDs.
 - Interaction coverage block: `enumerated N · probed M · coverage M/N (X%)` plus hidden-state pass status and reflection-round results.
-- Page region relationship model with `Z*` IDs, ownership, dependencies, emitted events, updates, responsive behavior, and source/confidence.
+- Page region relationship model with `Z*` IDs, ownership, dependencies, emitted events, updates, Region Layout Constraints, responsive behavior, and source/confidence.
 - UI / component inventory.
 - Interaction behavior matrix.
 - API / backend mapping table (or `no backend work in scope` if research-only).

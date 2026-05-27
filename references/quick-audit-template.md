@@ -63,6 +63,12 @@ Keep this short, but do not skip it. The goal is to capture how areas of the pag
 | Z1 |  |  |  |  |  |  |
 | Z2 |  |  |  |  |  |  |
 
+### Layout Constraints
+
+| Region | Placement | Anchor | Scroll Behavior | Mobile Transform | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| Z1 | bottom / left / overlay | viewport / parent / sibling | fixed / sticky / scrolls away / independently scrollable | side panel -> bottom sheet | screenshot + bbox |
+
 ```mermaid
 flowchart LR
   Z1["Z1 Input / Control"] -->|"event / data"| Z2["Z2 Output / Result"]
@@ -113,6 +119,7 @@ For quick audits, write only the requirements needed for the primary workflow.
 - [ ] Hidden-state passes done or marked `not applicable`.
 - [ ] Reflection round (3 candidates) probed.
 - [ ] Region relationship snapshot includes `Z*` IDs, owned state, consumed state, emitted events, and updates.
+- [ ] Layout Constraints captured for major regions, including fixed / sticky / docked behavior and mobile transform.
 - [ ] Interaction matrix covers small / icon-only controls.
 - [ ] API status separates observed / documented / inferred / blocked / missing.
 - [ ] PRD slice contains testable acceptance criteria.

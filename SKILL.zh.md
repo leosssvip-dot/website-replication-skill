@@ -51,6 +51,7 @@
 
    - 给每个主要区域分配稳定 `Z*` ID。证据来自截图位置、DOM landmark、a11y tree、inventory ID、bounding box。
    - 每个区域必须写：purpose、owned state、consumed state、emitted events、updated regions、empty/loading/error/success states、responsive behavior、source、confidence。
+   - 每个区域必须写 **Region Layout Constraints**：Placement、Anchor Target、Positioning Mode、sizing rule、scroll behavior、layering / containment、responsive transform、Collision Rules、evidence、source、confidence。`bottom-docked`、`sticky within container`、`fixed to viewport`、`overlay`、`independently scrollable`、`safe-area-aware`、`keyboard-avoiding` 这类术语都放在这里。
    - 显式建模跨区域依赖。例如：`Z1 Generator Panel -> submit payload -> Z2 Results Panel -> loading/result/error`；`Z3 History -> restore job -> Z1 form + Z2 result`。
    - auth、credits、selected item、current job、cart、permissions 等影响多个区域的共享 / gating state，要作为独立依赖处理。
    - implementation-ready audit 必须有 region relationship table，且至少有一个关系图或状态机。未知关系标 `inferred` 或 `blocked`，不要省略。
@@ -95,12 +96,12 @@
    - 脚本退出码 ≠ 0 时，按它列出的 ID 回 step 4 补，不许进 step 9。
    - 显式问自己：*"鉴于这个产品类型，我最可能漏掉的三件事是什么？"* 写下三个候选 — 常见盲点：submit 成功后状态、错误恢复路径、设置 / 偏好、history / undo、分享 / 导出、移动端专属 affordance、付费层暗示在免费层的可见线索 — 然后 probe 每一个，记录结果。
    - 对照最终态的 DOM 复核 inventory。交互打开的新元素（modal 内容、drawer 内容、展开面板）必须枚举并 probe。
-   - 复核 region model：每个主要区域都有 purpose、owned/consumed state、emitted events，并至少有一个 relationship 或明确的 `not applicable` 理由。
+   - 复核 region model：每个主要区域都有 purpose、owned/consumed state、emitted events、Region Layout Constraints，并至少有一个 relationship 或明确的 `not applicable` 理由。
    - 把结果写进交付物的 *Interaction Coverage* 与 *Region Model Coverage* 段。**只有走完这一轮才能进 step 9**。
 
 9. **产出 PRD 并做实施规划**
    - implementation-ready 工作必须用 [references/prd-template.md](references/prd-template.md) 写 Replication PRD。PRD 是开发交接物；audit report 是证据。
-   - 把 region model 转成 region contracts：visible conditions、state ownership、consumed state、emitted events、update targets、UI requirements、behavior requirements、acceptance criteria。
+   - 把 region model 转成 region contracts：visible conditions、layout constraints、state ownership、consumed state、emitted events、update targets、UI requirements、behavior requirements、acceptance criteria。
    - 把跨区域依赖转成带稳定 ID 的 interaction contracts（`C1`, `C2`...）。每个 contract 必须写 trigger region、trigger event、target region、state change、API/data dependency、acceptance。
    - 把审计结果整成 parity matrix：竞品行为、目标实现、API 映射、就绪度、风险、验收标准。
    - 按用户工作流影响优先级排序：主路径 → 结果 / submit 后行为 → history → 二级页面 → SEO / 支持页。
@@ -116,6 +117,7 @@
 - 结果 / submit 后：下载、保存到库、编辑 / 续写、分享、metadata、相关项、来源标注。
 - 后端不匹配：UI 字段没送、送了的字段无文档、不可用 API 的伪 enabled 按钮、缺 auth / 配额 / polling / webhook。
 - 移动端细节：sticky CTA、底栏、无横向溢出、工具栏自然换行、文字塞进控件、点击目标尺寸。
+- 布局约束漏检：sticky / fixed / docked 区域、独立滚动容器、overlay 是否占位、z-layer 与 backdrop、safe-area inset、键盘避让、与底栏 / FAB / toast / cookie bar 的碰撞规则。
 - Hover-only 浮出、键盘快捷键（`?` / `/` / `ctrl+k`）、右键菜单、拖拽重排 —— 不跑 step 4 就看不见。
 - 网络失败 UX、offline 态、慢网 skeleton —— 不限速看不见。
 - URL / 历史行为：deep-link、流程中 refresh、多 mode 间 back / forward —— 不导航就看不见。

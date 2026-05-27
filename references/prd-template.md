@@ -63,6 +63,17 @@ UI Requirements:
 
 -
 
+Layout Constraints:
+
+- Placement:
+- Anchor target:
+- Positioning mode:
+- Sizing:
+- Scroll behavior:
+- Layering / containment:
+- Responsive transform:
+- Collision rules:
+
 Behavior Requirements:
 
 -
@@ -123,6 +134,8 @@ stateDiagram-v2
 - Screen reader labels:
 - Minimum tap targets:
 - Overflow rules:
+- Fixed / sticky / docked regions:
+- Safe-area and keyboard avoidance:
 
 ## 9. Implementation Plan
 
@@ -149,6 +162,7 @@ stateDiagram-v2
 ## 12. PRD Completeness Checklist
 
 - [ ] Every `Z*` region has a requirement contract.
+- [ ] Every `Z*` region has layout constraints: placement, anchor target, positioning mode, sizing, scroll behavior, layering / containment, responsive transform, and collision rules.
 - [ ] Every cross-region dependency has a contract ID.
 - [ ] Input regions specify emitted events and payload shape.
 - [ ] Output regions specify consumed state and update triggers.
