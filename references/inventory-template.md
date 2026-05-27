@@ -37,6 +37,12 @@ Run [dom-enumeration.js](dom-enumeration.js) again after any major state change:
 - Successful submit (post-submit DOM often differs)
 - Auth state change
 
+Before re-running, set the next unused ID so the appended rows stay stable:
+
+```js
+window.__websiteReplicationInventoryOptions = { startIndex: 12 };
+```
+
 Append the new rows below the existing ones with a divider:
 
 ```markdown

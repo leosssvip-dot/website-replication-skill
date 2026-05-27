@@ -1,7 +1,8 @@
 ---
 name: website-replication-skill
-version: 0.4.0
 description: Audit a reference website or web app and produce a differentiated parity plan with page region relationships, PRD requirements, UI, interactions, API contracts, data model, and architecture. Use when benchmarking a competitor, replicating a legacy or partner site, matching product capabilities, reproducing workflow behavior with original branding, or auditing missing UI/function/API details.
+metadata:
+  version: 0.4.0
 ---
 
 # Website Replication
@@ -44,9 +45,11 @@ Replicate useful product behavior, not protected expression. Do not copy logos, 
   audit/**/*.har
   audit/**/*.har.gz
   audit/**/*.json
+  audit/**/*.md
   audit/**/*.txt
   audit/**/*.log
   audit/**/*.csv
+  !audit/**/MANIFEST.md
   audit/**/network/
   audit/**/dom/
   audit/**/reports/
@@ -125,7 +128,7 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - **For each non-trivial state change** (modal open, drawer expand, mode switch, post-submit), run [references/dom-distill.js](references/dom-distill.js) before and after, then diff with [references/state-diff.js](references/state-diff.js): `node references/state-diff.js before.md after.md`. The diff output goes into `Result` — replaces ad-hoc narration with deterministic added/removed lists.
    - Treat icon-only and visually-decorative-looking controls as functional until proven otherwise. Save / clear / copy / expand / randomize / regenerate / share / more — probe each individually.
    - For each interaction also record: validation, disabled state, loading state, optimistic update, error, success output, post-submit action, auth / permission redirect, paywall / quota behavior, and mobile sticky behavior.
-   - If the page is dynamic, re-run the enumeration script after each major state change (mode switch, modal open, post-submit). Append the new rows below the existing ones with a `<!-- After <state change> -->` divider.
+   - If the page is dynamic, re-run the enumeration script after each major state change (mode switch, modal open, post-submit). Before re-running, set `window.__websiteReplicationInventoryOptions = { startIndex: <next unused numeric ID> }` so appended rows do not reuse IDs. Append the new rows below the existing ones with a `<!-- After <state change> -->` divider.
 
 5. **Probe hidden states**
 
@@ -226,14 +229,14 @@ A full audit's tool outputs share the agent's context window. Per-call costs tha
 | 1. Raw `outerHTML` via `evaluate` | one call returns 200KB – 5MB of HTML | Forbidden — save to file, reference path, never load whole HTML into context |
 | 2. `get_page_text` / raw-text extraction on long pages | docs / Terms / changelog returns 50–200KB | Prefer the browser-MCP a11y snapshot, else run [references/dom-distill.js](references/dom-distill.js) |
 | 3. Inventory blowup on giant lists | 1000+ interactive elements (data tables, kanban) | `dom-enumeration.js` caps at 500 by default; lower to 200 or scope to `rootSelector` of the working region |
-| 4. Re-enumeration without diff | each state change re-emits the full inventory | Append only the *new* rows with a `<!-- After <state> -->` divider; do not repeat ones already recorded |
+| 4. Re-enumeration without diff | each state change re-emits the full inventory | Set `window.__websiteReplicationInventoryOptions = { startIndex: <next unused numeric ID> }`, append only the *new* rows with a `<!-- After <state> -->` divider, and do not repeat rows already recorded |
 | 5. Multi-page audit aggregation | loading 10 inventories back into context | Stream + summarize per page; keep paths and counts, not bodies |
 
 Hard rule: **any single tool output > 50KB must be written to a file and referenced by path**, not held in context.
 
 What's already enforced by the skill's artefacts:
 
-- `dom-enumeration.js`: `limit=500` rows · 60-char label truncation · no `outerHTML`.
+- `dom-enumeration.js`: `limit=500` rows · `startIndex` for appended state inventories · stable CSS-path fallback selectors · 60-char label truncation · no `outerHTML`.
 - `dom-distill.js`: `maxNodes=2000` · `maxDepth=10` · drops `<script>` / `<style>` / SVG primitives · collapses wrapper divs · 60-char text truncation · 80-char attribute truncation.
 - Screenshots and DOM dumps live as files; the deliverable references them by path.
 

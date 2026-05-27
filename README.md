@@ -168,7 +168,7 @@ If any are missing, the skill proceeds with explicit assumptions and marks unkno
 
 #### Default evidence directory
 
-Screenshots, DOM dumps, network logs, and the final report go to `./audit/<site-slug>/<YYYY-MM-DD>/` unless you specify another path. `audit/` is `.gitignore`'d — never commit real audit evidence.
+Screenshots, DOM dumps, network logs, and the final report go under `./audit/<site-slug>/` unless you specify another path. Keep high-risk evidence ignored: commit only reviewed screenshots and `MANIFEST.md` when safe; ignore DOM, network, report, inventory, and distill markdown files.
 
 ### Claim taxonomy
 
@@ -368,7 +368,7 @@ Claude Code 与 OpenAI Codex 已实测可用；其它 harness 预期可用但未
 
 #### 默认证据目录
 
-截图、DOM、网络日志、最终报告写入 `./audit/<site-slug>/<YYYY-MM-DD>/`，除非你指定其他路径。`audit/` 默认在 `.gitignore` 内，**真实证据不要提交到仓库**。
+截图、DOM、网络日志、最终报告写入 `./audit/<site-slug>/`，除非你指定其它路径。高风险证据必须忽略：只有确认脱敏后的截图与 `MANIFEST.md` 才适合提交；DOM、网络、报告、inventory、distill markdown 都应留在本地。
 
 ### Claim 分级体系
 

@@ -14,7 +14,7 @@
 //   - coverage = (probed + observed) / enumerated
 //
 // Exits non-zero if coverage < threshold (default 90%) AND there are
-// un-probed elements without a `blocked` reason. Wire into Step 7 gate.
+// un-probed elements without a `blocked` reason. Wire into Step 8 gate.
 
 const fs = require('fs');
 const path = require('path');
@@ -32,43 +32,55 @@ if (!file) {
 const content = fs.readFileSync(file, 'utf8');
 const lines = content.split('\n');
 
-// Find header row (must contain "| ID |" and "| Selector |" — schema lock)
-let tableStart = -1;
-for (let i = 0; i < lines.length; i++) {
-  if (/^\|\s*ID\s*\|/.test(lines[i]) && /Selector/i.test(lines[i])) {
-    tableStart = i;
-    break;
+const rows = [];
+let sawInventoryHeader = false;
+let currentHeader = null;
+
+function parseHeader(line) {
+  if (!/^\|\s*ID\s*\|/.test(line) || !/Selector/i.test(line)) return null;
+
+  const cells = line.split('|').slice(1, -1).map((c) => c.trim().toLowerCase());
+  const header = {
+    probedIdx: cells.indexOf('probed'),
+    resultIdx: cells.indexOf('result'),
+    idIdx: cells.indexOf('id'),
+  };
+
+  if (header.probedIdx < 0 || header.resultIdx < 0 || header.idIdx < 0) {
+    console.error('Inventory header must include "ID", "Probed", and "Result" columns.');
+    process.exit(2);
   }
+
+  return header;
 }
 
-if (tableStart < 0) {
+// Parse all markdown inventory tables in the file. Re-enumeration sections are
+// often appended after comments like "<!-- After opening modal -->", so stopping
+// at the first non-table line would hide late modal/drawer controls from the gate.
+for (let i = 0; i < lines.length; i++) {
+  const line = lines[i];
+  const nextHeader = parseHeader(line);
+  if (nextHeader) {
+    currentHeader = nextHeader;
+    sawInventoryHeader = true;
+    continue;
+  }
+
+  if (!currentHeader || !line.startsWith('|')) continue;
+  if (/^\|\s*-{3,}\s*\|/.test(line)) continue;
+
+  const cells = line.split('|').slice(1, -1).map((c) => c.trim());
+  if (cells.length <= currentHeader.probedIdx) continue;
+  rows.push({
+    id: cells[currentHeader.idIdx] || '?',
+    probed: cells[currentHeader.probedIdx],
+    result: cells[currentHeader.resultIdx] || '',
+  });
+}
+
+if (!sawInventoryHeader) {
   console.error('No inventory table found (expected header "| ID | Selector | ... | Probed | Result | Notes |").');
   process.exit(2);
-}
-
-// Detect column indices from header
-const headerCells = lines[tableStart].split('|').slice(1, -1).map((c) => c.trim().toLowerCase());
-const probedIdx = headerCells.indexOf('probed');
-const resultIdx = headerCells.indexOf('result');
-const idIdx = headerCells.indexOf('id');
-
-if (probedIdx < 0 || resultIdx < 0) {
-  console.error('Inventory header must include "Probed" and "Result" columns.');
-  process.exit(2);
-}
-
-// Parse data rows (skip header + separator)
-const rows = [];
-for (let i = tableStart + 2; i < lines.length; i++) {
-  const line = lines[i];
-  if (!line.startsWith('|')) break;
-  const cells = line.split('|').slice(1, -1).map((c) => c.trim());
-  if (cells.length <= probedIdx) continue;
-  rows.push({
-    id: cells[idIdx] || '?',
-    probed: cells[probedIdx],
-    result: cells[resultIdx] || '',
-  });
 }
 
 // Classify

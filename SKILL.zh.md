@@ -16,9 +16,11 @@
   audit/**/*.har
   audit/**/*.har.gz
   audit/**/*.json
+  audit/**/*.md
   audit/**/*.txt
   audit/**/*.log
   audit/**/*.csv
+  !audit/**/MANIFEST.md
   audit/**/network/
   audit/**/dom/
   audit/**/reports/
@@ -59,7 +61,7 @@
    - **每个非平凡状态变化**（modal 打开、drawer 展开、mode 切换、submit 后）前后各跑一次 [references/dom-distill.js](references/dom-distill.js)，再用 [references/state-diff.js](references/state-diff.js) 比对：`node references/state-diff.js before.md after.md`。diff 输出填进 `Result` 列——取代散文描述，让"发生了什么"变成机械结果。
    - icon-only 与看起来装饰性的控件都按"有功能"处理直到反证。save / clear / copy / expand / randomize / regenerate / share / more — 一个一个 probe。
    - 每条交互还要记：validation、disabled、loading、optimistic update、error、success 输出、submit 后动作、auth / permission 重定向、paywall / quota、移动端 sticky。
-   - 动态页面在每次重大状态变化（mode 切换、modal 打开、submit 后）后重跑枚举脚本，新行用 `<!-- After <state change> -->` 分隔追加。
+   - 动态页面在每次重大状态变化（mode 切换、modal 打开、submit 后）后重跑枚举脚本。重跑前设置 `window.__websiteReplicationInventoryOptions = { startIndex: <下一个未使用的数字 ID> }`，避免追加行复用旧 ID；新行用 `<!-- After <state change> -->` 分隔追加。
 
 5. **探测隐藏状态**
 
@@ -159,13 +161,13 @@
 | 1. `evaluate` 返 raw `outerHTML` | 单次 200KB–5MB HTML | **禁止**——存盘 + 引路径，绝不进 context |
 | 2. `get_page_text` / 长页 raw 文本 | docs / 条款 / changelog 50–200KB | 优先用浏览器 MCP a11y 快照，否则跑 [references/dom-distill.js](references/dom-distill.js) |
 | 3. 巨型列表 inventory 膨胀 | 1000+ 交互元素（数据表、kanban） | `dom-enumeration.js` 默认 limit=500，必要时降到 200 或 scope 到具体 `rootSelector` |
-| 4. 重枚举不 diff | 每次 state 变化全量重抓 | 用 `<!-- After <state> -->` 分隔只追加**新行**，已记的不复述 |
+| 4. 重枚举不 diff | 每次 state 变化全量重抓 | 设置 `window.__websiteReplicationInventoryOptions = { startIndex: <下一个未使用的数字 ID> }`，用 `<!-- After <state> -->` 分隔只追加**新行**，已记的不复述 |
 | 5. 多页面 audit 汇总 | 把 10 份 inventory 全读回 context | 流式按页处理；只持有路径和计数，不持有内容 |
 
 **硬规则**：单次 tool 输出 > 50KB 必须落盘 + 引路径，不许放进 context。
 
 Skill 本身已强制的保护：
 
-- `dom-enumeration.js`：limit=500 · label 60 字符截断 · 不返 outerHTML
+- `dom-enumeration.js`：limit=500 · `startIndex` 支持追加状态 inventory · 稳定 CSS-path fallback selector · label 60 字符截断 · 不返 outerHTML
 - `dom-distill.js`：maxNodes=2000 · maxDepth=10 · 剔除 script/style/SVG · 折叠 wrapper div · 文本 60 字符截断 · 属性 80 字符截断
 - 截图与 DOM dump 都是文件产物，交付物只引路径

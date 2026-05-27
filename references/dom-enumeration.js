@@ -10,8 +10,10 @@
 //
 // Usage in browser-MCP:
 //   1. Navigate to the in-scope page.
-//   2. Eval this file's contents.
-//   3. Read window.__interactiveInventory; paste into
+//   2. Optional for appended re-enumeration:
+//      window.__websiteReplicationInventoryOptions = { startIndex: 12 };
+//   3. Eval this file's contents.
+//   4. Read window.__interactiveInventory; paste into
 //      audit/<site-slug>/snapshots/<date>/<page-slug>-inventory.md.
 //
 // The script is intentionally framework-agnostic and side-effect-free
@@ -21,7 +23,8 @@
   rootSelector = 'body',
   limit = 500,
   includeOffscreen = false,
-} = {}) {
+  startIndex = 0,
+} = globalThis.__websiteReplicationInventoryOptions || {}) {
   const SELECTORS = [
     'button',
     'a[href]',
@@ -81,11 +84,62 @@
     }
   }
 
+  function escapeAttr(value) {
+    return String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"').slice(0, 80);
+  }
+
+  function escapeCssIdent(value) {
+    if (globalThis.CSS && typeof globalThis.CSS.escape === 'function') {
+      return globalThis.CSS.escape(value);
+    }
+    return String(value).replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+  }
+
+  function cssPath(el) {
+    const parts = [];
+    let node = el;
+
+    while (node && node.nodeType === 1 && node !== root && parts.length < 4) {
+      const tag = node.tagName.toLowerCase();
+      let part = tag;
+
+      if (node.id) {
+        parts.unshift(`${tag}#${escapeCssIdent(node.id)}`);
+        break;
+      }
+
+      const testId =
+        node.getAttribute('data-testid') ||
+        node.getAttribute('data-test') ||
+        node.getAttribute('data-test-id');
+      if (testId) {
+        parts.unshift(`${tag}[data-testid="${escapeAttr(testId)}"]`);
+        break;
+      }
+
+      const parent = node.parentElement;
+      if (parent) {
+        const sameTagSiblings = Array.from(parent.children).filter(
+          (child) => child.tagName === node.tagName
+        );
+        if (sameTagSiblings.length > 1) {
+          part += `:nth-of-type(${sameTagSiblings.indexOf(node) + 1})`;
+        }
+      }
+
+      parts.unshift(part);
+      node = parent;
+    }
+
+    return parts.join(' > ') || el.tagName.toLowerCase();
+  }
+
   // Build rows.
   const rows = [];
-  let idx = 0;
+  let idx = Number.isFinite(startIndex) ? startIndex : parseInt(startIndex, 10);
+  if (!Number.isFinite(idx) || idx < 0) idx = 0;
   for (const el of found) {
-    if (idx >= limit) break;
+    if (rows.length >= limit) break;
     let rect;
     try {
       rect = el.getBoundingClientRect();
@@ -118,9 +172,10 @@
       '';
     const ariaLabel = el.getAttribute('aria-label') || '';
     const selector =
-      id ||
-      (dataTestId ? `[data-testid="${dataTestId}"]` : '') ||
-      `${tag}${ariaLabel ? `[aria-label="${ariaLabel.replace(/"/g, '\\"').slice(0, 30)}"]` : ''}`;
+      (id ? `#${escapeCssIdent(el.id)}` : '') ||
+      (dataTestId ? `[data-testid="${escapeAttr(dataTestId)}"]` : '') ||
+      (ariaLabel ? `${tag}[aria-label="${escapeAttr(ariaLabel).slice(0, 30)}"]` : '') ||
+      cssPath(el);
 
     rows.push({
       id: `i${String(idx).padStart(3, '0')}`,
