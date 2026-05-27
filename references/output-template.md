@@ -40,7 +40,7 @@ Coverage below 90% without a `blocked` reason is **not acceptable** — list un-
 
 #### Reflection round
 
-Three things most likely to have been missed (per Workflow step 7), and the result of probing each:
+Three things most likely to have been missed (per Workflow step 8), and the result of probing each:
 
 | # | Suspected miss | Probed result |
 | --- | --- | --- |
@@ -92,19 +92,51 @@ Demonstrate only the *structural pattern* using the target brand's own tokens an
 // event/state pattern only when non-obvious
 ```
 
-## 5. Interaction Matrix
+## 5. Page Region Relationship Model
+
+Use [region-model-template.md](region-model-template.md). Do not stop at visual labels like "left panel" or "right panel"; describe each region's product responsibility and relationships.
+
+### Region Map
+
+| Zone ID | Region Name | Evidence / Selector | Visual Position | Purpose | Owns State | Consumes State | Emits Events | Updates | Source | Confidence |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Z1 |  | screenshot / DOM / inventory IDs |  |  |  |  |  |  | observed / inferred | high / medium / low |
+
+### Region Dependency Matrix
+
+| From Region | Event / Data | To Region | Trigger | Target State Change | API / Storage Dependency | Evidence |
+| --- | --- | --- | --- | --- | --- | --- |
+| Z1 | form payload | Z2 | submit | empty -> loading -> result/error |  |  |
+
+### Region Relationship Graph
+
+```mermaid
+flowchart LR
+  Z1["Z1 Input / Config"] -->|"submit payload"| Z2["Z2 Result / Output"]
+  Z3["Z3 History / Selection"] -->|"restore item"| Z1
+  Z3 -->|"show saved result"| Z2
+```
+
+### Region State Contracts
+
+| Region | Empty | Ready | Loading | Success | Error | Disabled / Gated |
+| --- | --- | --- | --- | --- | --- | --- |
+| Z1 |  |  |  |  |  |  |
+| Z2 |  |  |  |  |  |  |
+
+## 6. Interaction Matrix
 
 Rows below are *examples* of common interactions to consider. Replace with the actual user actions in scope; do not leave generic placeholders in the final deliverable.
 
-| User Action | Competitor Result | Target Result | Status | Source | Confidence | Notes |
-| --- | --- | --- | --- | --- | --- | --- |
-| Primary CTA |  |  |  | observed / documented / inferred |  |  |
-| Mode / tab switch |  |  |  | observed / documented / inferred |  |  |
-| Secondary action (clear / copy / save / expand) |  |  |  | observed / documented / inferred |  |  |
-| Upload / select source |  |  |  | observed / documented / inferred |  |  |
-| Submit / confirm |  |  |  | observed / documented / inferred |  |  |
-| Post-submit / result action |  |  |  | observed / documented / inferred |  |  |
-| Gated state (auth / quota / paywall) |  |  |  | observed / documented / inferred |  |  |
+| User Action | Source Region | Target Region | Competitor Result | Target Result | Status | Source | Confidence | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Primary CTA | Z1 | Z2 |  |  |  | observed / documented / inferred |  |  |
+| Mode / tab switch |  |  |  |  |  | observed / documented / inferred |  |  |
+| Secondary action (clear / copy / save / expand) |  |  |  |  |  | observed / documented / inferred |  |  |
+| Upload / select source |  |  |  |  |  | observed / documented / inferred |  |  |
+| Submit / confirm |  |  |  |  |  | observed / documented / inferred |  |  |
+| Post-submit / result action |  |  |  |  |  | observed / documented / inferred |  |  |
+| Gated state (auth / quota / paywall) |  |  |  |  |  | observed / documented / inferred |  |  |
 
 ### Interaction Flow
 
@@ -126,11 +158,11 @@ sequenceDiagram
   API-->>UI: Final state
 ```
 
-## 6. API And Backend Mapping
+## 7. API And Backend Mapping
 
-| Feature | Competitor Field / Call | Target UI Field | Target API Payload | Integration Need | Status | Source | Confidence |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-|  |  |  |  |  |  | observed / documented / inferred | high / medium / low |
+| Feature | Region / Contract | Competitor Field / Call | Target UI Field | Target API Payload | Integration Need | Status | Source | Confidence |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+|  | Z1 / C1 |  |  |  |  |  | observed / documented / inferred | high / medium / low |
 
 ### Observed / Documented Endpoints
 
@@ -145,7 +177,7 @@ sequenceDiagram
 | --- | --- | --- | --- |
 |  | missing docs / auth / paid access / private target API |  |  |
 
-## 7. Data Model
+## 8. Data Model
 
 Replace the example entities below with the actual domain. Common shapes by product type:
 
@@ -165,11 +197,11 @@ erDiagram
 
 ### Core Tables
 
-| Table | Purpose | Key Fields |
-| --- | --- | --- |
-|  |  |  |
+| Table | Purpose | Key Fields | Region / State Link |
+| --- | --- | --- | --- |
+|  |  |  |  |
 
-## 8. Architecture Recommendation
+## 9. Architecture Recommendation
 
 Only fill rows that the audit's evidence supports. Mark out-of-scope rows `not applicable`.
 
@@ -199,7 +231,30 @@ flowchart LR
   Callback --> DB
 ```
 
-## 9. Implementation Plan
+## 10. Replication PRD Handoff
+
+Use [prd-template.md](prd-template.md) for the full PRD. The PRD is required for implementation-ready work.
+
+### Product Objective
+
+- User problem:
+- Success outcome:
+- Non-goals:
+
+### Region Requirement Index
+
+| Region | Requirement Section | Required Contracts | Acceptance Summary |
+| --- | --- | --- | --- |
+| Z1 | PRD section link | C1, C2 |  |
+| Z2 | PRD section link | C1, C3 |  |
+
+### Cross-Region Contract Index
+
+| Contract ID | Trigger Region | Trigger | Target Region | Required State Change | API / Data Dependency | Acceptance |
+| --- | --- | --- | --- | --- | --- | --- |
+| C1 | Z1 | submit valid form | Z2 | empty -> loading -> result/error |  |  |
+
+## 11. Implementation Plan
 
 | Step | Work | Readiness | Acceptance | Verification |
 | --- | --- | --- | --- | --- |
@@ -207,18 +262,22 @@ flowchart LR
 | 2 |  | can implement now / needs preparation |  |  |
 | 3 |  | can implement now / needs preparation |  |  |
 
-## 10. Verification Checklist
+## 12. Verification Checklist
 
 - [ ] Screenshot evidence captured for competitor and target.
 - [ ] Evidence is redacted; no secrets, private data, or one-time URLs.
 - [ ] Interactive inventory generated via DOM enumeration; coverage M / N ≥ 90% or gaps justified.
 - [ ] All hidden-state passes completed or marked `not applicable` with reason.
 - [ ] Reflection round (3 likely-missed candidates) probed and recorded.
+- [ ] Page region relationship model completed with `Z*` IDs.
+- [ ] Every major region has purpose, owned state, consumed state, emitted events, updates, and responsive behavior.
+- [ ] Cross-region contracts exist for the primary user workflow.
 - [ ] Component inventory complete.
 - [ ] Interaction matrix covers small controls and post-submit actions.
 - [ ] API mapping separates observed / documented / inferred / blocked / missing.
 - [ ] Data and architecture diagrams included when backend work matters; otherwise marked not applicable.
 - [ ] Blocked backend / API work is separated from ready implementation work.
+- [ ] Replication PRD exists for implementation-ready work and contains testable acceptance criteria.
 - [ ] Tests cover new UI behavior and payload mapping (when working in a repo).
 - [ ] Build / typecheck / lint passed.
 - [ ] Desktop and mobile visual checks passed.

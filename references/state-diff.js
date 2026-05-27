@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// website-replication-skill — DOM-distill state diff (Step 3)
+// website-replication-skill — DOM-distill state diff (Step 4)
 //
 // Runtime: Node.js
 // Usage:

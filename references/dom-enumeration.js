@@ -5,7 +5,8 @@
 // a browser-MCP eval call (Chrome MCP / Playwright MCP / Claude Preview).
 //
 // Output: markdown rows printed to console and stashed at
-//         window.__interactiveInventory for easy copy.
+//         window.__interactiveInventory for easy copy. Fill the Region column
+//         with Z* IDs after creating the Page Region Relationship Model.
 //
 // Usage in browser-MCP:
 //   1. Navigate to the in-scope page.
@@ -134,12 +135,12 @@
 
   // Emit markdown.
   const header =
-    '| ID | Selector | Tag | Label / aria-label | Disabled | Bounding box | Probed | Result | Notes |';
-  const sep = '| --- | --- | --- | --- | --- | --- | --- | --- | --- |';
+    '| ID | Selector | Tag | Label / aria-label | Disabled | Bounding box | Region | Probed | Result | Notes |';
+  const sep = '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |';
   const body = rows
     .map(
       (r) =>
-        `| ${r.id} | \`${r.selector}\` | ${r.tag} | ${r.label} | ${r.disabled} | ${r.box} | | | |`
+        `| ${r.id} | \`${r.selector}\` | ${r.tag} | ${r.label} | ${r.disabled} | ${r.box} | | | | |`
     )
     .join('\n');
 

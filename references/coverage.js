@@ -115,7 +115,7 @@ if (passes) {
 } else {
   report.push(`## ✗ Coverage gate FAILED`);
   report.push('');
-  report.push(`Coverage ${coveragePct}% < threshold ${threshold}% and ${unprobedNoBlocked.length} un-probed elements lack a \`blocked\` reason. Return to Step 3 against the IDs below before submitting the deliverable.`);
+  report.push(`Coverage ${coveragePct}% < threshold ${threshold}% and ${unprobedNoBlocked.length} un-probed elements lack a \`blocked\` reason. Return to Step 4 against the IDs below before submitting the deliverable.`);
   report.push('');
   report.push(`### Un-probed elements without \`blocked\` reason:`);
   for (const u of unprobedNoBlocked.slice(0, 30)) {
