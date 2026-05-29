@@ -102,14 +102,17 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
 1. **Define scope and evidence**
    - List every competitor page, route, tab, mode, drawer, modal, and post-submit state in scope.
    - **Read `audit/<site-slug>/MANIFEST.md` first** (format: [references/manifest-template.md](references/manifest-template.md)). For each in-scope URL × viewport × auth-state, look up the row. Cache hit (entry exists, `Last Captured` within the cache window — default 30 days, see *Configuration*) → reuse the stored snapshot + DOM, tag the evidence row `observed (cached from <date>)`, do not re-capture. Cache miss or stale → capture fresh and append / update the manifest row. Create `MANIFEST.md` with the template header if it does not exist yet.
+   - Split the page into named regions early (shell / sidebar, primary work area, secondary panel, bottom action rail or player, global overlays) and note how each region affects the others. Do this even if step 3 will formalize the model later.
    - Capture desktop and mobile screenshots only for URLs that missed the cache. Prefer full-page screenshots plus focused component screenshots.
    - Save redacted evidence: screenshots, control inventories (buttons / inputs / links), network calls, console errors, and a **structural DOM snapshot**. For the DOM snapshot pick *one* of: (a) the browser-MCP's built-in accessibility-tree tool (e.g. `take_snapshot` on chrome-devtools-mcp) when available; (b) [references/dom-distill.js](references/dom-distill.js) — a paste-ready script that emits a markdown outline 50–100× smaller than raw `outerHTML`, with framework noise stripped; (c) raw `outerHTML` only if neither is reachable, saved to file and never reloaded into context. Never `evaluate` `document.documentElement.outerHTML` directly into the agent's context — that's the single largest token-cost vector this skill warns about. Network traces are always fresh — never reused, never read from old dates.
    - If the page is dynamic, inspect after interaction, not just the initial render.
+   - For each primary workflow, capture before-submit, in-progress, completed, empty, filtered / selected, and mobile states. Do not assume examples / showcases / empty states remain once real user content exists.
    - Track each claim as `observed`, `documented`, `inferred`, `blocked`, or `not applicable`. Cached evidence stays `observed` — the 30-day window is the reliability budget.
 
 2. **Extract UI system**
    - Run [references/design-tokens.js](references/design-tokens.js) via the browser-MCP eval. It histograms `getComputedStyle` across visible elements and outputs a markdown table of top colors, fonts, sizes, radii, shadows, spacings — populate the deliverable's Visual Tokens table from this rather than eyeballing CSS.
    - Document layout, grid, shell / navigation, density, spacing, radius, borders, colors, typography, media treatment, shadows, motion — the script gives the numbers; you write the synthesis.
+   - Document layout relationships, not just individual components: column ratios, when panels stack, scroll ownership, sticky / fixed bottom rails, sidebars with independent bottom sections, whether lists are paginated / internally scrolled / page-scrolled, and collision behavior with global controls.
    - Build a component inventory: navigation, cards, tabs, segmented controls, inputs, uploads, chips, toolbars, modals, drawers, result/list items, history panels, gating UI.
    - Produce HTML/CSS examples *using the target brand's own tokens and copy*, demonstrating only the structural pattern (e.g. flex layout with left icon + label). Do not paste competitor class names, exact spacing values, or copy.
    - Keep UI differentiation intentional: preserve interaction logic and field structure while changing branding, copy, imagery, and visual rhythm.
@@ -119,6 +122,7 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - Assign stable `Z*` IDs to every major region. Use screenshot position, DOM landmarks, accessibility tree, inventory IDs, and bounding boxes as evidence.
    - For each region, capture: purpose, owned state, consumed state, emitted events, updated regions, empty/loading/error/success states, responsive behavior, source, and confidence.
    - For each region, capture **Region Layout Constraints**: Placement, Anchor Target, Positioning Mode, sizing rule, scroll behavior, layering / containment, responsive transform, Collision Rules, evidence, source, and confidence. This is where terms like bottom-docked, sticky within container, fixed to viewport, overlay, independently scrollable, safe-area-aware, or keyboard-avoiding belong.
+   - For list and workspace-like products, explicitly model list containers, folder / collection navigation, active selection, pagination / internal scroll, filter summaries, and footer alignment as region responsibilities rather than cosmetic details.
    - Model cross-region dependencies explicitly. Example: `Z1 Generator Panel -> submit payload -> Z2 Results Panel -> loading/result/error`; `Z3 History -> restore job -> Z1 form + Z2 result`.
    - Treat shared/gating state as its own dependency when it controls multiple regions: auth, credits, selected item, current job, cart, permissions, workspace, filters.
    - Implementation-ready audits must include a region relationship table and at least one graph or state machine. If relationships are unknown, mark `inferred` or `blocked`; do not omit them.
@@ -127,8 +131,12 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - **Enumerate first, click second.** Run [references/dom-enumeration.js](references/dom-enumeration.js) via the browser-MCP eval call (or paste into DevTools console). Save the markdown output to `audit/<site-slug>/snapshots/<date>/<page-slug>-inventory.md`, following [references/inventory-template.md](references/inventory-template.md). The script handles selector priority, shadow-DOM piercing, and `cursor:pointer` detection — do not re-invent the enumeration logic.
    - Walk the inventory by ID. First map each row to a `Z*` region. Then fill in `Probed` (`✓` clicked / `o` observed-by-URL-or-attribute / `✗` skipped), `Result` (action + outcome + network call observed + `observed` / `inferred` / `blocked` tag), and `Notes`. Do not skip an ID without writing a reason in `Result`.
    - **For each non-trivial state change** (modal open, drawer expand, mode switch, post-submit), run [references/dom-distill.js](references/dom-distill.js) before and after, then diff with [references/state-diff.js](references/state-diff.js): `node references/state-diff.js before.md after.md`. The diff output goes into `Result` — replaces ad-hoc narration with deterministic added/removed lists.
+   - Open every menu and submenu: kebab / ellipsis menus, action dropdowns, filter menus, sort menus, bulk-action menus, move / folder pickers, download submenus, and remix / edit follow-up menus.
+   - Verify popover mechanics: outside-click dismissal, escape / close behavior if present, disabled menu items, destructive menu items, nested submenu positioning, viewport clipping, and mobile placement.
    - Treat icon-only and visually-decorative-looking controls as functional until proven otherwise. Save / clear / copy / expand / randomize / regenerate / share / more — probe each individually.
    - For each interaction also record: validation, disabled state, loading state, optimistic update, error, success output, post-submit action, auth / permission redirect, paywall / quota behavior, and mobile sticky behavior.
+   - Probe selection and bulk behavior when lists exist: row checkbox placement, select-all state, selected-count actions, bulk move / download / delete affordances, and how selection interacts with filters and pagination.
+   - Probe global controls separately from row controls: global players, persistent action bars, sidebars, bottom CTAs, floating helpers, and fixed footers often have independent state and must not cover primary CTAs, list content, pagination, or mobile bottom navigation.
    - If the page is dynamic, re-run the enumeration script after each major state change (mode switch, modal open, post-submit). Before re-running, set `window.__websiteReplicationInventoryOptions = { startIndex: <next unused numeric ID> }` so appended rows do not reuse IDs. Append the new rows below the existing ones with a `<!-- After <state change> -->` divider.
 
 5. **Probe hidden states**
@@ -151,6 +159,9 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - Read official / API / integration docs when available. Separate `observed`, `documented`, and `inferred` claims.
    - Map competitor UI fields to target backend fields. Preserve existing target API contracts unless the user asks to redesign them.
    - Identify missing endpoints, third-party integrations, auth / permissions, file upload / storage, background jobs, async completion (polling / webhook), billing / quota, rate limits, and persistence / history.
+   - Classify every state as local-only, session-only, account-persistent, workspace / project-persistent, or shared / collaborative. Folders, collections, moved item assignments, reactions, favorites, hidden / archived state, saved filters, and history usually need backend persistence unless explicitly scoped as local.
+   - If persistence matters, include migrations / schema changes, ownership checks, RLS / permission policy, read API, mutation API, hydration strategy, fallback behavior, and rollback path. Do not call a state replicated if it disappears on refresh, server restart, origin / port change, or a second device.
+   - Check SSR / hydration risk for client-derived state: visible counts, selected folders / workspaces, filters, timestamps, random values, locale formatting, and environment branches must not make server HTML disagree with the client. Seed state from the server, gate client-only rendering, or render stable placeholders.
    - Never delete product features because an API or integration is missing. Mark the gap, search docs when allowed, and propose the backend / API preparation needed.
 
 7. **Model data and architecture**
@@ -158,6 +169,7 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - Output ER and status-machine diagrams when data or async tasks matter.
    - Recommend architecture only after API and data needs are known: frontend framework, server / API layer, queue, database, object storage, cache, auth, billing, third-party integrations, observability.
    - Cross-check data entities against region state ownership. If a region owns durable state, identify where that state is stored or mark it as a target-side requirement.
+   - For list / workspace / collection experiences, model containers and membership explicitly: folders / workspaces / collections, item assignments, item feedback, filters, sort order, pagination, archived / deleted states, and history retrieval.
 
 8. **Reflect and verify coverage** *(mandatory before step 9)*
    - Run [references/coverage.js](references/coverage.js) against each per-page inventory: `node references/coverage.js audit/<site>/snapshots/<date>/<page>-inventory.md [--threshold=90]`. The script parses the `Probed` column, counts `✓` / `o` / `✗`, computes coverage, and **exits non-zero** if coverage < threshold and any un-probed row lacks a `blocked` reason. This is the formal gate — agent self-reporting is not.
@@ -175,15 +187,22 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - Prioritize by user workflow impact: primary path first, then result / post-action behavior, history, secondary pages, SEO / support pages.
    - Split work into "can implement now" and "needs API / integration / data preparation"; do not present blocked backend work as ready.
    - Verification follows the target repo's existing conventions (CLAUDE.md / test framework). For new interaction behavior, add at least a happy-path test and a payload-contract test before merging.
-   - Verify with build / typecheck / lint, screenshots, DOM checks for overflow / responsive behavior, and API contract checks.
+   - Verify with build / typecheck / lint, screenshots, DOM checks for overflow / responsive behavior, API contract checks, persistence checks, hydration checks, and at least one state-transition test for the original parity miss.
 
 ## Common Misses To Prevent
 
 - Icon-only buttons with no behavior: clear, save, randomize, expand, copy, download, regenerate, share, more.
+- Menus that look right but do not model the product: ellipsis actions, nested downloads, remix / edit follow-ups, move-to dialogs, sort menus, filter menus, bulk menus, disabled destructive actions, and outside-click dismissal.
 - Hidden state changes: selected tabs, mode switches, advanced toggles, uploaded / selected source state, draft / restore state.
+- Region replacement after workflow progress: examples / showcases may disappear once user content exists; result panels may switch into task lists, history, folders, queues, or workspaces.
 - User feedback: character counters, saved / restored notices, disabled reasons, validation text, empty states, loading / progress, error recovery.
 - Result / post-action: download, save to library, edit / extend, share, metadata, related items, source attribution.
-- Backend mismatch: UI fields not sent, sent fields not documented, fake enabled buttons for unsupported APIs, missing auth / quota / polling / webhooks.
+- Layout ownership: panels that page-scroll instead of internally scrolling, sidebars without fixed bottom account / upgrade areas, global players that cover primary CTAs, sticky footers not aligned across columns, panels stacking too early, and lists that stretch page height.
+- Inconsistent row states: pending rows, completed rows, failed rows, selected rows, and active-playing rows must share the same information architecture unless the competitor clearly separates them.
+- Missing list semantics: select-all, row checkbox placement, selected-count menus, pagination, filter summaries, reset controls, and sort icons / direction.
+- Persistent-state mismatch: folders, moved items, likes / dislikes, saved filters, history, and user preferences implemented as local-only state when they should be account / workspace data.
+- Hydration mismatch: client-only localStorage, random values, dates, locale formatting, or environment branches changing visible counts / labels between server render and client render.
+- Backend mismatch: UI fields not sent, sent fields not documented, fake enabled buttons for unsupported APIs, missing auth / quota / polling / webhooks, missing migrations / RLS / ownership checks for new persisted state.
 - Mobile details: sticky CTA, bottom nav, no horizontal overflow, toolbars wrapping cleanly, text fitting inside controls, hit-target sizing.
 - Layout constraints: sticky / fixed / docked regions, independent scroll containers, overlay vs reserved-space behavior, z-layer and backdrop rules, safe-area insets, keyboard avoidance, and collision with bottom nav / FAB / toast / cookie bars.
 - Hover-only reveals, keyboard shortcuts (`?` / `/` / `ctrl+k`), right-click menus, drag-and-drop reorder — invisible without the step-4 hidden-states pass.

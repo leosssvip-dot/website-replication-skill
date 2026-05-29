@@ -2,7 +2,7 @@ name: website-replication-skill
 version: 0.4.0
 interface:
   display_name: "Website Replication"
-  short_description: "Audit region logic and parity PRDs"
-  default_prompt: "Use $website-replication-skill to audit a reference website or web app and produce a differentiated parity plan with page region relationships, PRD contracts, UI, interactions, API contracts, data model, architecture, evidence safety, and verification."
+  short_description: "Audit region logic, state, persistence, and parity PRDs"
+  default_prompt: "Use $website-replication-skill to audit a reference website or web app and produce a differentiated parity plan with page region relationships, state transitions, persistence and hydration boundaries, PRD contracts, UI, interactions, API contracts, data model, architecture, evidence safety, and verification."
 policy:
   allow_implicit_invocation: true

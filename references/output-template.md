@@ -130,6 +130,18 @@ flowchart LR
 | Z1 |  |  |  |  |  |  |
 | Z2 |  |  |  |  |  |  |
 
+### Stateful Region Matrix
+
+Use this for app/tool pages where the same regions change after user action. It prevents preserving an initial empty/examples region after the reference switches to generated content, history, folders, or task queues.
+
+| State | Primary Region | Secondary / Result Region | Bottom / Global Controls | Persistence Needed | Source | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| Empty / examples |  |  |  | local / session / account / workspace / none | observed / documented / inferred |  |
+| In progress / loading |  |  |  |  |  |  |
+| Completed / history |  |  |  |  |  |  |
+| Filtered / selected |  |  |  |  |  |  |
+| Mobile |  |  |  |  |  |  |
+
 ## 6. Interaction Matrix
 
 Rows below are *examples* of common interactions to consider. Replace with the actual user actions in scope; do not leave generic placeholders in the final deliverable.
@@ -143,6 +155,11 @@ Rows below are *examples* of common interactions to consider. Replace with the a
 | Submit / confirm |  |  |  |  |  | observed / documented / inferred |  |  |
 | Post-submit / result action |  |  |  |  |  | observed / documented / inferred |  |  |
 | Gated state (auth / quota / paywall) |  |  |  |  |  | observed / documented / inferred |  |  |
+| Menu / submenu action |  |  |  |  |  | observed / documented / inferred |  |  |
+| Filter / sort / reset |  |  |  |  |  | observed / documented / inferred |  |  |
+| Selection / bulk action |  |  |  |  |  | observed / documented / inferred |  |  |
+| Global player / fixed control |  |  |  |  |  | observed / documented / inferred |  |  |
+| Workspace / folder / collection change |  |  |  |  |  | observed / documented / inferred |  |  |
 
 ### Interaction Flow
 
@@ -182,6 +199,18 @@ sequenceDiagram
 | Gap | Why Blocked | Evidence | Preparation Needed |
 | --- | --- | --- | --- |
 |  | missing docs / auth / paid access / private target API |  |  |
+
+### Persistence And Hydration Matrix
+
+Fill this whenever the audited workflow has saved folders, lists, history, reactions, item movement, filters, preferences, or other user state.
+
+| State | Scope | Competitor Persistence | Target Persistence | API / Schema Need | Hydration Risk | Status | Source |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Folder / workspace / collection | local / session / account / workspace / shared |  |  |  |  | matched / different by design / missing / blocked / not applicable | observed / documented / inferred |
+| Item assignment / move-to |  |  |  |  |  |  |  |
+| Like / dislike / favorite |  |  |  |  |  |  |  |
+| Filter / sort / search preference |  |  |  |  |  |  |  |
+| History / generated result |  |  |  |  |  |  |  |
 
 ## 8. Data Model
 
@@ -281,11 +310,15 @@ Use [prd-template.md](prd-template.md) for the full PRD. The PRD is required for
 - [ ] Cross-region contracts exist for the primary user workflow.
 - [ ] Component inventory complete.
 - [ ] Interaction matrix covers small controls and post-submit actions.
+- [ ] Stateful region matrix covers empty/examples, in-progress, completed/history, filtered/selected, and mobile states where applicable.
 - [ ] API mapping separates observed / documented / inferred / blocked / missing.
+- [ ] Persistence matrix classifies local/session/account/workspace/shared state and identifies required schema/API/policy work.
+- [ ] Hydration risks are checked for visible counts, labels, selected folders/workspaces, filters, dates, random values, and client-only storage.
 - [ ] Data and architecture diagrams included when backend work matters; otherwise marked not applicable.
 - [ ] Blocked backend / API work is separated from ready implementation work.
 - [ ] Replication PRD exists for implementation-ready work and contains testable acceptance criteria.
 - [ ] Tests cover new UI behavior and payload mapping (when working in a repo).
+- [ ] Tests cover persistence and the exact state transition that caused the parity miss.
 - [ ] Build / typecheck / lint passed.
-- [ ] Desktop and mobile visual checks passed.
+- [ ] Desktop and mobile visual checks passed, including overlap checks for sticky CTAs, global players, pagination, and sidebars.
 - [ ] Missing backend work is documented, not silently removed from scope.

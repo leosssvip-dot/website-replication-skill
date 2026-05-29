@@ -23,13 +23,16 @@ Mark claim source: `observed`, `documented`, or `inferred`.
 ## UI System
 
 - Shell / navigation hierarchy and active states.
-- Page layout, columns, sticky areas, scroll containers.
+- Page layout, columns, sticky areas, scroll containers, and region relationships.
+- Responsive breakpoints: when sidebars collapse, when secondary panels stack, whether primary and secondary work areas preserve intended proportions, and whether any panel stacks earlier than the reference.
+- Scroll ownership: full page vs internal list scroll, bounded panels, pagination footers, sticky CTA rails, fixed global players, sidebar bottom rails, and whether these areas overlap.
 - Typography scale, font families, weights, letter spacing.
 - Color roles: background, panel, border, muted text, accent, success, warning, error.
 - Spacing rhythm, component density, radius, shadow, separators.
 - Buttons: primary, secondary, icon-only, disabled, loading.
 - Inputs: textarea, select, radio, segmented control, slider, upload, search, chips.
 - Cards / list items: example cards, result cards, history cards, gating cards.
+- List item information architecture: artwork / thumbnail, play affordance, title, edit affordance, prompt / description, duration, status, tags, row actions, more menu, active / selected / disabled states.
 - Motion: hover, focus, tab switch, modal / drawer, skeleton / loading.
 - Responsive behavior: wrapping, sticky CTA, bottom nav, overflow, tap targets.
 
@@ -43,6 +46,13 @@ Mark claim source: `observed`, `documented`, or `inferred`.
 - Submission: disabled criteria, auth redirect, quota / paywall gate, loading / progress, cancellation.
 - Async tasks: pending polling, webhook completion, retry, timeout, failed state.
 - Results / post-submit: preview, variants, download, save, edit / extend, share, metadata, history.
+- State-dependent region replacement: examples / inspiration / empty states vs generated-content lists, task queues, folders, history, or result workspaces.
+- Pending vs completed row parity: same row proportions and layout unless the reference clearly changes them; pending rows should not feel like a separate product.
+- Menus and submenus: ellipsis / kebab actions, remix / edit action menus, download submenus, move-to pickers, filter menus, sort menus, outside-click dismissal, disabled actions, destructive actions.
+- Workspace / folder behavior when applicable: breadcrumb clickability, directory view, create folder / workspace, archive view, item move-to destination picker, current destination disabled, active-folder item counts.
+- Selection and bulk actions: row checkbox placement, select-all, selected-count menu, bulk move, bulk download, disabled bulk delete, and how selection interacts with filters, pagination, and current workspace / collection.
+- Global controls: fixed / sticky player or action rail, previous / next, seek, mute, close, like / dislike, share, and whether the control blocks CTAs, pagination, list rows, or mobile bottom navigation.
+- Filters and sorting: actual filter semantics, default filters, active filter summary, reset behavior, sort icon / direction, and empty-result recovery.
 
 ## Page Region Relationships
 
@@ -93,6 +103,10 @@ Mark claim source: `observed`, `documented`, or `inferred`.
 - Async / job lifecycle: created, pending, processing, completed, failed, cancelled.
 - Webhooks and polling reconciliation.
 - Data persistence and history retrieval.
+- Persistence scope classification: local-only, session-only, account-persistent, workspace / project-persistent, shared / collaborative.
+- Persisted interaction state: folders / workspaces / collections, moved item assignments, likes / dislikes, favorites, hidden / archived state, saved filters, search or sort preferences, and history.
+- Migration / schema / policy needs for new persistence: tables, enums, ownership, RLS / permission policies, read route, mutation route, rollback path.
+- Hydration risk: server-rendered counts, visible labels, selected workspace / folder, filters, timestamps, random IDs, and client-only storage that can change the initial HTML.
 - Gaps: missing endpoint, missing third-party docs, UI-only feature, unsafe fake-enabled state.
 
 ## Evidence Safety
@@ -106,6 +120,7 @@ Mark claim source: `observed`, `documented`, or `inferred`.
 
 - Entities and relationships.
 - Status machines for async jobs.
+- Container / collection model for list products: workspace / folder / collection, item membership, item state, feedback, archived / deleted state, pagination, and sort.
 - Caching boundaries and invalidation.
 - Background workers / serverless jobs.
 - Object-storage layout.
@@ -128,8 +143,10 @@ Mark claim source: `observed`, `documented`, or `inferred`.
 - Payload contract tests for every submitted field.
 - Region relationship tests for primary cross-region contracts.
 - API route tests for validation, auth, and failure paths.
+- Persistence tests for account / workspace state across reload, origin / port change, server restart, or a fresh client where applicable.
+- Hydration tests or SSR/client mismatch checks for visible counts, labels, folders, filters, and local-only state.
 - Browser screenshots for desktop and mobile.
-- DOM checks: no overflow, expected controls visible, forbidden copied tokens / assets absent.
+- DOM checks: no overflow, expected controls visible, popovers dismiss, CTA / player / pagination do not overlap, bounded panels do not stretch the page, forbidden copied tokens / assets absent.
 - Evidence redaction re-check before delivering the report.
 - Build / typecheck / lint.
 - Manual or automated test for the original missed behavior that prompted the audit.

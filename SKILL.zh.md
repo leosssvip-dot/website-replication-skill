@@ -33,14 +33,17 @@
 1. **定义范围与证据**
    - 列出所有 in-scope 页面、路由、tab、mode、drawer、modal、submit 后状态。
    - **先读 `audit/<site-slug>/MANIFEST.md`**（格式：[references/manifest-template.md](references/manifest-template.md)）。对每个 URL × viewport × auth 组合查表：命中且 `Last Captured` 在 cache window（默认 30 天）内 → 复用旧 snapshot 与 DOM，evidence 行标 `observed (cached from <date>)`，不重截。未命中或过期 → 新截，写回 manifest。manifest 不存在就用模板头新建。
+   - 先把页面拆成命名区域（shell / sidebar、主工作区、次级面板、底部 action rail 或播放器、全局 overlay），记录区域之间如何互相影响；step 3 会正式建模，但这里先建立观察边界。
    - 只对未命中的 URL 截桌面 + 移动端截图。整页截图 + 关键组件特写。
    - 保存脱敏证据：截图、控件清单、网络调用、console errors、以及一份**结构化 DOM 快照**。DOM 快照三选一：(a) 浏览器 MCP 自带的 a11y 树工具（chrome-devtools-mcp 的 `take_snapshot` 等）首选；(b) 跑 [references/dom-distill.js](references/dom-distill.js) 产出 markdown 大纲，比原始 outerHTML 小 50-100×，框架噪声已剔除；(c) 实在不行才存 raw `outerHTML`，存盘后**不要再读回 context**。**禁止**直接 `evaluate` `document.documentElement.outerHTML` 进 agent context——这是 skill 警告的最大 token 黑洞。网络抓包**永远新抓，不复用**。
    - 动态页面要在交互后再观察，不能只看首帧。
+   - 每条主流程都要捕获 submit 前、进行中、完成后、空态、筛选 / 选中态、移动端态。不要假设 examples / showcase / 空态在有真实用户内容后仍然保留。
    - 每个 claim 标 `observed` / `documented` / `inferred` / `blocked` / `not applicable`。复用证据仍是 `observed`（30 天窗口是可靠性预算）。
 
 2. **抽取 UI 系统**
    - 在浏览器 MCP eval 里跑 [references/design-tokens.js](references/design-tokens.js)。脚本对可见元素做 `getComputedStyle` 直方图，输出"色彩 / 字体 / 字号 / 圆角 / 阴影 / 间距"的 top 值表 —— 直接拿来填 Visual Tokens 段，不要靠眼力估 CSS。
    - 文档化布局、网格、shell / 导航、密度、间距、圆角、边框、色彩、字体、媒体处理、阴影、动效——脚本给数字，你写综合。
+   - 文档化布局关系，而不只是单个组件：列宽比例、何时堆叠、谁拥有滚动、sticky / fixed 底部栏、sidebar 是否有独立底部区、列表是分页 / 内部滚动 / 页面滚动，以及全局控件的碰撞规则。
    - 建组件清单：导航、卡片、tab、segmented control、输入框、上传、chip、工具栏、modal、drawer、结果项、history、gating UI。
    - 用**目标产品自己的 token 与文案**写 HTML/CSS 示例，仅演示结构模式（如 icon + label 的 flex 布局）。不要粘竞品 class 名、精确间距、文案。
    - UI 差异化是有意为之：保留交互逻辑与字段结构，改 branding / 文案 / 图像 / 视觉节奏。
@@ -52,6 +55,7 @@
    - 给每个主要区域分配稳定 `Z*` ID。证据来自截图位置、DOM landmark、a11y tree、inventory ID、bounding box。
    - 每个区域必须写：purpose、owned state、consumed state、emitted events、updated regions、empty/loading/error/success states、responsive behavior、source、confidence。
    - 每个区域必须写 **Region Layout Constraints**：Placement、Anchor Target、Positioning Mode、sizing rule、scroll behavior、layering / containment、responsive transform、Collision Rules、evidence、source、confidence。`bottom-docked`、`sticky within container`、`fixed to viewport`、`overlay`、`independently scrollable`、`safe-area-aware`、`keyboard-avoiding` 这类术语都放在这里。
+   - list / workspace 类产品要显式建模：列表容器、folder / collection 导航、active selection、分页 / 内部滚动、filter summary、footer alignment。这些是区域职责，不是纯视觉细节。
    - 显式建模跨区域依赖。例如：`Z1 Generator Panel -> submit payload -> Z2 Results Panel -> loading/result/error`；`Z3 History -> restore job -> Z1 form + Z2 result`。
    - auth、credits、selected item、current job、cart、permissions 等影响多个区域的共享 / gating state，要作为独立依赖处理。
    - implementation-ready audit 必须有 region relationship table，且至少有一个关系图或状态机。未知关系标 `inferred` 或 `blocked`，不要省略。
@@ -60,8 +64,12 @@
    - **先枚举，再点击**。在浏览器自动化里跑 [references/dom-enumeration.js](references/dom-enumeration.js)（DevTools 控制台 eval 或 browser-MCP 的 eval 接口）。markdown 输出保存为 `audit/<site-slug>/snapshots/<date>/<page-slug>-inventory.md`，格式见 [references/inventory-template.md](references/inventory-template.md)。脚本已处理选择器优先级、shadow DOM 穿透、`cursor:pointer` 探测，**不要自己重新发明枚举逻辑**。
    - 按 ID 逐行走 inventory。先把每行映射到 `Z*` 区域，再填 `Probed`（`✓` 点过 / `o` URL/属性观察 / `✗` 跳过）、`Result`（动作 + 结果 + 观察到的网络调用 + `observed` / `inferred` / `blocked` 标签）、`Notes`。跳过任何 ID 都必须在 `Result` 里写原因。
    - **每个非平凡状态变化**（modal 打开、drawer 展开、mode 切换、submit 后）前后各跑一次 [references/dom-distill.js](references/dom-distill.js)，再用 [references/state-diff.js](references/state-diff.js) 比对：`node references/state-diff.js before.md after.md`。diff 输出填进 `Result` 列——取代散文描述，让"发生了什么"变成机械结果。
+   - 打开每一个 menu / submenu：kebab / ellipsis、action dropdown、filter、sort、bulk action、move / folder picker、download submenu、remix / edit follow-up menu。
+   - 验证 popover 机制：点击空白关闭、Esc / close 行为（如存在）、disabled menu item、危险操作项、嵌套 submenu 位置、viewport 裁切、移动端位置。
    - icon-only 与看起来装饰性的控件都按"有功能"处理直到反证。save / clear / copy / expand / randomize / regenerate / share / more — 一个一个 probe。
    - 每条交互还要记：validation、disabled、loading、optimistic update、error、success 输出、submit 后动作、auth / permission 重定向、paywall / quota、移动端 sticky。
+   - 有列表时必须 probe 选择与批量行为：row checkbox 位置、select-all、selected-count actions、bulk move / download / delete，以及 selection 如何与 filter / pagination 交互。
+   - 全局控件要与 row 控件分开 probe：全局播放器、persistent action bar、sidebar、底部 CTA、floating helper、fixed footer 往往有独立状态，不能遮挡主 CTA、列表内容、分页或移动端底栏。
    - 动态页面在每次重大状态变化（mode 切换、modal 打开、submit 后）后重跑枚举脚本。重跑前设置 `window.__websiteReplicationInventoryOptions = { startIndex: <下一个未使用的数字 ID> }`，避免追加行复用旧 ID；新行用 `<!-- After <state change> -->` 分隔追加。
 
 5. **探测隐藏状态**
@@ -84,12 +92,16 @@
    - 读官方 / API / 集成文档。分清 `observed` / `documented` / `inferred`。
    - 把竞品 UI 字段映射到目标后端字段。**不主动重设计目标 API 契约**，除非用户明示。
    - 列出缺失：endpoint、第三方集成、auth / 权限、文件上传 / 存储、后台任务、异步完成（polling / webhook）、计费 / 配额、限流、持久化 / 历史。
+   - 将每种状态归类为 local-only、session-only、account-persistent、workspace / project-persistent、shared / collaborative。folder、collection、item move assignment、reaction、favorite、hidden / archived、saved filter、history 通常需要后端持久化，除非明确只做本地态。
+   - 只要涉及持久化，就要列 migration / schema、ownership check、RLS / permission policy、read API、mutation API、hydration strategy、fallback behavior、rollback path。刷新、重启服务、换 origin / port、第二台设备后丢失的状态，不能叫已复刻。
+   - 检查 SSR / hydration 风险：可见 count、选中的 folder / workspace、filter、timestamp、random value、locale formatting、环境分支都不能导致 server HTML 和 client HTML 不一致。需要从服务端 seed、gate client-only render，或渲染稳定占位。
    - **不要因 API 或集成缺失就砍产品功能**。标 gap、查文档、提出需要的后端 / API 准备。
 
 7. **建模数据与架构**
    - 按竞品域草拟核心实体。按产品类型调整：SaaS、电商、内容、协作、AI 工具、marketplace、内部工具。
    - 数据或异步任务重要时，输出 ER 与状态机图。
    - 架构推荐只在 API + 数据需求明确后给：前端框架、服务器 / API 层、队列、数据库、对象存储、缓存、auth、计费、第三方集成、可观测性。
+   - list / workspace / collection 体验要显式建模容器和成员关系：folder / workspace / collection、item assignment、item feedback、filter、sort order、pagination、archived / deleted、history retrieval。
 
 8. **反思并核对覆盖率**（强制 gate，在 step 9 前）
    - 对每份 per-page inventory 跑 [references/coverage.js](references/coverage.js)：`node references/coverage.js audit/<site>/snapshots/<date>/<page>-inventory.md [--threshold=90]`。脚本解析 `Probed` 列、统计 `✓` / `o` / `✗`、算覆盖率，**覆盖率 < 阈值且有 ✗ 行没写 `blocked` 理由时退出码 ≠ 0**。这是正式 gate，不靠 agent 自报数字。
@@ -107,15 +119,22 @@
    - 按用户工作流影响优先级排序：主路径 → 结果 / submit 后行为 → history → 二级页面 → SEO / 支持页。
    - 拆"现在就能实施"与"需要 API / 集成 / 数据准备"两堆。**不要**把被阻塞的后端工作呈现为 ready。
    - 验证遵守目标仓库现有惯例（CLAUDE.md / 测试框架）。新交互行为合并前至少补 happy-path 测试 + payload 契约测试。
-   - 验证手段：build / typecheck / lint、截图、DOM overflow / 响应式检查、API 契约检查。
+   - 验证手段：build / typecheck / lint、截图、DOM overflow / 响应式检查、API 契约检查、持久化检查、hydration 检查，以及至少一个覆盖原始 parity miss 的状态转换测试。
 
 ## 常见漏检（Common Misses）
 
 - icon-only 按钮无行为：clear、save、randomize、expand、copy、download、regenerate、share、more。
+- 菜单看起来像但产品逻辑没建模：ellipsis actions、nested downloads、remix / edit follow-up、move-to dialog、sort menu、filter menu、bulk menu、disabled destructive action、点击空白关闭。
 - 隐藏状态变化：tab 选中、mode 切换、advanced 开关、上传 / 已选源状态、draft / restore。
+- 流程推进后的区域替换：有真实内容后 examples / showcase 可能消失，result panel 可能切成 task list、history、folder、queue 或 workspace。
 - 用户反馈：字数计数、已保存 / 已恢复提示、disabled 原因、validation 文案、空态、loading / progress、错误恢复。
 - 结果 / submit 后：下载、保存到库、编辑 / 续写、分享、metadata、相关项、来源标注。
-- 后端不匹配：UI 字段没送、送了的字段无文档、不可用 API 的伪 enabled 按钮、缺 auth / 配额 / polling / webhook。
+- 布局归属错：右侧面板用页面滚动而不是内部滚动、sidebar 没有独立吸底账号 / 升级区、全局播放器遮挡主 CTA、sticky footer 跨列不齐、面板过早堆叠、列表撑高页面。
+- row 状态不一致：pending、completed、failed、selected、active-playing 行的信息架构应一致，除非参考站明确分离。
+- list 语义漏掉：select-all、row checkbox 位置、selected-count menu、pagination、filter summary、reset control、sort icon / direction。
+- 持久化边界错：folder、moved item、like / dislike、saved filter、history、user preference 应该是 account / workspace 数据，却只做成 local-only。
+- Hydration mismatch：client-only localStorage、random、date、locale formatting、环境分支导致 server render 与 client render 的 count / label 不一致。
+- 后端不匹配：UI 字段没送、送了的字段无文档、不可用 API 的伪 enabled 按钮、缺 auth / 配额 / polling / webhook、缺 migration / RLS / ownership check。
 - 移动端细节：sticky CTA、底栏、无横向溢出、工具栏自然换行、文字塞进控件、点击目标尺寸。
 - 布局约束漏检：sticky / fixed / docked 区域、独立滚动容器、overlay 是否占位、z-layer 与 backdrop、safe-area inset、键盘避让、与底栏 / FAB / toast / cookie bar 的碰撞规则。
 - Hover-only 浮出、键盘快捷键（`?` / `/` / `ctrl+k`）、右键菜单、拖拽重排 —— 不跑 step 4 就看不见。
