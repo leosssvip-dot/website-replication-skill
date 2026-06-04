@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// website-replication-skill — Network request clusterer (Step 5)
+// website-replication-skill — Network request clusterer (Step 6)
 //
 // Runtime: Node.js
 // Usage:
@@ -115,12 +115,21 @@ if (polled.length > 0) {
   out.push(`- **Likely polled / retried** (count ≥ 3, single sub-key): ${polled.slice(0, 5).map((c) => c.method + ' ' + c.host + c.path).join(' · ')}`);
 }
 
-const channels = sorted.filter((c) => /signaler|channel|stream|sse|push|websocket|long-poll/i.test(c.host + c.path));
+// Match keyword tokens only at path-segment boundaries (delimited by / . _ -
+// or the string ends), with an optional trailing plural "s". A naked substring
+// test would fire on ordinary routes — "assets" ⊃ "sse", "catalog"/"blog" ⊃
+// "log", "login" ⊃ "log" — and mislabel them as channels / telemetry.
+function segMatch(haystack, tokens) {
+  const re = new RegExp(`(?:^|[/._-])(?:${tokens.join('|')})s?(?:[/._-]|$)`, 'i');
+  return re.test(haystack);
+}
+
+const channels = sorted.filter((c) => segMatch(c.host + c.path, ['signaler', 'channel', 'stream', 'sse', 'push', 'websocket', 'long-poll']));
 if (channels.length > 0) {
   out.push(`- **Likely real-time channels** (signaler/channel/stream-shaped): ${channels.map((c) => c.host + c.path).join(' · ')}`);
 }
 
-const telemetry = sorted.filter((c) => /collect|log|measurement|analytics|ga4|telemetry|beacon/i.test(c.host + c.path));
+const telemetry = sorted.filter((c) => segMatch(c.host + c.path, ['collect', 'log', 'measurement', 'analytics', 'ga4', 'telemetry', 'beacon']));
 if (telemetry.length > 0) {
   out.push(`- **Telemetry / analytics endpoints**: ${telemetry.map((c) => c.host).slice(0, 5).join(', ')}`);
 }

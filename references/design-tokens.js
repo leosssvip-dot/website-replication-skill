@@ -48,7 +48,10 @@
 
   function bump(map, key) {
     if (!key) return;
-    const trivial = ['normal', 'auto', 'none', '0px', '0px 0px 0px 0px', 'rgba(0, 0, 0, 0)', 'rgb(0, 0, 0)'];
+    // Keep pure black here: it is usually the dominant text color and belongs
+    // in the per-category histograms. Black/white are filtered later, but only
+    // from the brand palette, where they carry no signal.
+    const trivial = ['normal', 'auto', 'none', '0px', '0px 0px 0px 0px', 'rgba(0, 0, 0, 0)'];
     if (trivial.includes(key)) return;
     map.set(key, (map.get(key) || 0) + 1);
   }
@@ -105,10 +108,14 @@
   out.push('');
   out.push('| Color | Combined count |');
   out.push('| --- | --- |');
+  // Brand palette: drop fully-transparent colors and pure black/white. Match
+  // alpha-0 only on `rgba(...)` so opaque colors with a zero channel — red
+  // `rgb(255, 0, 0)`, yellow `rgb(255, 255, 0)` — are NOT mistaken for transparent.
+  const isTransparent = (c) => c === 'transparent' || (/^rgba\(/.test(c) && /,\s*0\)$/.test(c));
   const palette = new Map();
   for (const key of ['color', 'backgroundColor', 'borderColor']) {
     for (const [c, n] of hist[key].entries()) {
-      if (c.includes(', 0)') || c === 'rgba(0, 0, 0, 0)') continue;
+      if (isTransparent(c) || c === 'rgb(0, 0, 0)' || c === 'rgb(255, 255, 255)') continue;
       palette.set(c, (palette.get(c) || 0) + n);
     }
   }

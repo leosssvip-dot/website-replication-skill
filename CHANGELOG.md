@@ -9,7 +9,41 @@ Planned for the next milestones — not yet implemented:
 - CI: markdown lint + link checker + SKILL.md frontmatter validator on PRs.
 - Migration guide for skill-version bumps when the consumer project has a cached `MANIFEST.md`.
 - A second real audit on a fully public site (no auth gating) to complement the Gemini anonymous-tier sample, demonstrating 100% coverage.
-- Stress-test the four v0.3 scripts on diverse sites (heavy-shadow-DOM SPA, large data table, infinite-scroll feed).
+- Stress-test the v0.3 scripts on diverse sites (heavy-shadow-DOM SPA, large data table, infinite-scroll feed).
+
+## [0.4.2] — 2026-06-04
+
+### Added — Control Intent Ledger
+
+- **`references/parity-trap-ledger.md`** — a "looks present ≠ works like the reference" guard. Every meaningful control must record observed intent, complete outcome, auth states, persistence class, backend/API mapping, cross-region updates, post-submit/result effect, target requirement, and test evidence before it counts as replicated. Ships minimum-acceptance rules per control type (picker / saved-content / mode-specific / icon-only), a common-trap table (static confirmation, split-brain state, result-routing miss, local-only persistence downgrade, …), reflection prompts, and verification hooks.
+- Wired into the workflow and templates: `SKILL.md` steps now start and re-check the ledger; `output-template.md`, `parity-checklist.md`, and `prd-template.md` reference it so control intent flows into PRD requirements and acceptance criteria.
+
+### Fixed — script bugs surfaced in review
+
+- **`network-cluster.js`** — the "real-time channel" and "telemetry" detectors matched naked substrings, so ordinary routes were mislabeled: `/assets/app.js` flagged as a channel (`assets` ⊃ `sse`), and `/blog`, `/api/login`, `/catalog` flagged as telemetry (all ⊃ `log`). Keyword matching is now anchored to path-segment boundaries (`/ . _ -` or string ends, optional trailing plural), so true positives (`signaler`, `/channel`, `/collect`, `/log`) survive while the false positives are gone.
+- **`coverage.js`** — a `Probed` value the parser didn't recognize (e.g. `partial`, `todo`) was silently dropped: it lowered coverage but never appeared in the actionable "un-probed" list, so the gate could read green while real rows went unprobed. Any non-`✓`/`o` marker now counts as un-probed and is named (with an `unrecognized Probed value "…"` reason when the Result cell is blank). An inventory table with a header but **0 element rows** now **fails** the gate instead of passing as "0 / 0" — an empty inventory is an enumeration failure, not full coverage.
+- **`design-tokens.js`** — pure black was dropped from *all* histograms, hiding the usually-dominant text color; the palette comment claimed it filtered "pure black/white" but white was kept and the transparent test (`includes(', 0)')`) also discarded opaque colors with a zero channel (red `rgb(255, 0, 0)`, yellow `rgb(255, 255, 0)`). Black is now kept in the per-category histograms; the brand palette filters transparent + pure black + pure white, with an alpha-0 test that only fires on `rgba(...)`.
+
+### Fixed — documentation drift
+
+- **Step numbers** in script headers realigned to the current 9-step workflow: `network-cluster.js` `Step 5` → `Step 6`, `coverage.js` `Step 7 gate` → `Step 8 gate` (it already said "Step 8" elsewhere). Stale `step 7` reflection reference in the Gemini sample updated to step 8.
+- **`inventory-template.md`** now documents the `o` `Probed` state (added in 0.3.0) in the column conventions and the coverage-reporting math (`(✓ + o) / Enumerated`), and demonstrates it with an example row.
+- **README "Repository layout"** (English + Chinese) refreshed — it had omitted all six `references/*.js` scripts, `scripts/validate-skill.mjs`, `CHANGELOG.md`, `SKILL.zh.md`, and the region-model / prd / inventory / manifest templates.
+- **`examples/sample-audit.md`** rewritten to the current `output-template.md` structure: it now includes a full Page Region Relationship Model (Z0–Z4 with layout constraints, dependency matrix, state contracts, stateful region matrix) and a Replication PRD handoff (region requirement index + cross-region contracts C1–C6), so the fictional walkthrough actually exercises the region-modeling workflow.
+
+## [0.4.0] — 2026-05-29
+
+### Added — region modeling as a first-class workflow step
+
+- **Step 3 "Model page regions and relationships"** inserted into the workflow (all later steps renumbered): assign stable `Z*` IDs to semantic regions, capture owned/consumed state, emitted events, and cross-region dependencies.
+- **`references/region-model-template.md`** — region map, region layout/containment, region dependency matrix, region state contracts, page-level state machine, and a region-modeling checklist.
+- **Region Layout Constraints** — a dedicated contract (placement, anchor target, positioning mode, sizing, scroll behavior, layering/containment, responsive transform, collision rules) threaded through `SKILL.md`, `region-model-template.md`, `output-template.md`, `prd-template.md`, `quick-audit-template.md`, and `parity-checklist.md`, with `scripts/validate-skill.mjs` asserting the phrasing stays present in each.
+- **`references/prd-template.md`** — Replication PRD handoff: region requirement contracts, cross-region interaction contracts with stable IDs, state machines, and a completeness checklist. PRD is required for implementation-ready audits.
+
+### Changed
+
+- **`scripts/validate-skill.mjs`** hardened to check the region-layout-constraint contract across all templates in addition to JS syntax and the coverage-gate behavior.
+- **Parity checklist** strengthened around region relationships, persistence scope, and hidden-state coverage.
 
 ## [0.3.0] — 2026-05-15
 
@@ -29,8 +63,6 @@ Planned for the next milestones — not yet implemented:
 
 - All Node scripts tested locally against synthetic fixtures. `design-tokens.js` is browser-only — verify when next running an audit.
 - This is a MINOR bump per the CHANGELOG's own SemVer convention — new optional tooling, no breaking workflow contract change. Existing inventories without the `o` Probed state still parse correctly (treated as `✗`).
-
-## [0.2.0] — 2026-05-15
 
 ## [0.2.0] — 2026-05-15
 

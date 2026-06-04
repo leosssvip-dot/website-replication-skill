@@ -2,7 +2,7 @@
 name: website-replication-skill
 description: Audit a reference website or web app and produce a differentiated parity plan with page region relationships, PRD requirements, UI, interactions, API contracts, data model, and architecture. Use when benchmarking a competitor, replicating a legacy or partner site, matching product capabilities, reproducing workflow behavior with original branding, or auditing missing UI/function/API details.
 metadata:
-  version: 0.4.0
+  version: 0.4.2
 ---
 
 # Website Replication
@@ -108,6 +108,7 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - If the page is dynamic, inspect after interaction, not just the initial render.
    - For each primary workflow, capture before-submit, in-progress, completed, empty, filtered / selected, and mobile states. Do not assume examples / showcases / empty states remain once real user content exists.
    - Track each claim as `observed`, `documented`, `inferred`, `blocked`, or `not applicable`. Cached evidence stays `observed` — the 30-day window is the reliability budget.
+   - Start a Control Intent Ledger using [references/parity-trap-ledger.md](references/parity-trap-ledger.md). Every visible control in scope must later have observed intent, complete outcome, auth / persistence class, region effect, backend mapping, and verification evidence.
 
 2. **Extract UI system**
    - Run [references/design-tokens.js](references/design-tokens.js) via the browser-MCP eval. It histograms `getComputedStyle` across visible elements and outputs a markdown table of top colors, fonts, sizes, radii, shadows, spacings — populate the deliverable's Visual Tokens table from this rather than eyeballing CSS.
@@ -130,8 +131,10 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
 4. **Enumerate and probe interactions**
    - **Enumerate first, click second.** Run [references/dom-enumeration.js](references/dom-enumeration.js) via the browser-MCP eval call (or paste into DevTools console). Save the markdown output to `audit/<site-slug>/snapshots/<date>/<page-slug>-inventory.md`, following [references/inventory-template.md](references/inventory-template.md). The script handles selector priority, shadow-DOM piercing, and `cursor:pointer` detection — do not re-invent the enumeration logic.
    - Walk the inventory by ID. First map each row to a `Z*` region. Then fill in `Probed` (`✓` clicked / `o` observed-by-URL-or-attribute / `✗` skipped), `Result` (action + outcome + network call observed + `observed` / `inferred` / `blocked` tag), and `Notes`. Do not skip an ID without writing a reason in `Result`.
+   - For every primary, secondary, and icon-only control, update the Control Intent Ledger. A control is not "replicated" until its trigger, destination UI, current-state label, create / select / clear / restore behavior, persistence class, and downstream result effect are either implemented, intentionally different, or marked blocked.
    - **For each non-trivial state change** (modal open, drawer expand, mode switch, post-submit), run [references/dom-distill.js](references/dom-distill.js) before and after, then diff with [references/state-diff.js](references/state-diff.js): `node references/state-diff.js before.md after.md`. The diff output goes into `Result` — replaces ad-hoc narration with deterministic added/removed lists.
    - Open every menu and submenu: kebab / ellipsis menus, action dropdowns, filter menus, sort menus, bulk-action menus, move / folder pickers, download submenus, and remix / edit follow-up menus.
+   - For picker-like controls (save-to, restore, saved items, source selectors, folder / workspace / collection pickers), verify the full picker contract: logged-out gate when applicable, logged-in open behavior, option list, current selection, select / create / clear actions when present, close / outside-click behavior, persisted label after refresh, and effect on the next submitted or moved item.
    - Verify popover mechanics: outside-click dismissal, escape / close behavior if present, disabled menu items, destructive menu items, nested submenu positioning, viewport clipping, and mobile placement.
    - Treat icon-only and visually-decorative-looking controls as functional until proven otherwise. Save / clear / copy / expand / randomize / regenerate / share / more — probe each individually.
    - For each interaction also record: validation, disabled state, loading state, optimistic update, error, success output, post-submit action, auth / permission redirect, paywall / quota behavior, and mobile sticky behavior.
@@ -160,6 +163,7 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - Map competitor UI fields to target backend fields. Preserve existing target API contracts unless the user asks to redesign them.
    - Identify missing endpoints, third-party integrations, auth / permissions, file upload / storage, background jobs, async completion (polling / webhook), billing / quota, rate limits, and persistence / history.
    - Classify every state as local-only, session-only, account-persistent, workspace / project-persistent, or shared / collaborative. Folders, collections, moved item assignments, reactions, favorites, hidden / archived state, saved filters, and history usually need backend persistence unless explicitly scoped as local.
+   - For every account / workspace state in the Control Intent Ledger, name the single state owner and all affected regions. Do not allow split-brain behavior where a generator control, saved-item picker, results list, and workspace / folder view each keep separate copies of the same selection or assignment.
    - If persistence matters, include migrations / schema changes, ownership checks, RLS / permission policy, read API, mutation API, hydration strategy, fallback behavior, and rollback path. Do not call a state replicated if it disappears on refresh, server restart, origin / port change, or a second device.
    - Check SSR / hydration risk for client-derived state: visible counts, selected folders / workspaces, filters, timestamps, random values, locale formatting, and environment branches must not make server HTML disagree with the client. Seed state from the server, gate client-only rendering, or render stable placeholders.
    - Never delete product features because an API or integration is missing. Mark the gap, search docs when allowed, and propose the backend / API preparation needed.
@@ -177,6 +181,7 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - Ask explicitly: *"Given this product category, what are the three things I am most likely to have missed?"* Write the three candidates down — common blind spots: post-success states, error recovery paths, settings / preferences, history / undo, sharing / export, mobile-only affordances, paid-tier hints visible to free users — then probe each and record the result.
    - Re-check the inventory against the rendered DOM after the final state. Any new elements added by interactions (modal contents, drawer contents, expanded panels) must be enumerated and probed.
    - Re-check the region model: every major region has a purpose, owned/consumed state, emitted events, Region Layout Constraints, and at least one relationship or an explicit `not applicable` reason.
+   - Re-check the Control Intent Ledger: every non-trivial control has an observed competitor outcome, target implementation requirement, auth / persistence classification, cross-region effect, and test or browser evidence. Any row missing one of those fields must stay in the gap list.
    - Record results in the deliverable's *Interaction Coverage* and *Region Model Coverage* sections. Only after this round may you proceed to step 9.
 
 9. **Produce PRD and plan implementation**
@@ -184,6 +189,7 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - Convert the region model into region contracts: visible conditions, layout constraints, state ownership, consumed state, emitted events, update targets, UI requirements, behavior requirements, and acceptance criteria.
    - Convert cross-region dependencies into interaction contracts with stable IDs (`C1`, `C2`, ...). Each contract must name trigger region, trigger event, target region, state change, API/data dependency, and acceptance.
    - Turn the audit into a parity matrix: competitor behavior, target implementation, API mapping, readiness, risk, acceptance criteria.
+   - Convert Control Intent Ledger rows into PRD requirements for controls, pickers, saved-item flows, and result-routing behavior. If a control changes where generated / submitted items land, acceptance criteria must prove the selected destination is applied to the created item and visible in the destination region.
    - Prioritize by user workflow impact: primary path first, then result / post-action behavior, history, secondary pages, SEO / support pages.
    - Split work into "can implement now" and "needs API / integration / data preparation"; do not present blocked backend work as ready.
    - Verification follows the target repo's existing conventions (CLAUDE.md / test framework). For new interaction behavior, add at least a happy-path test and a payload-contract test before merging.
@@ -192,7 +198,12 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
 ## Common Misses To Prevent
 
 - Icon-only buttons with no behavior: clear, save, randomize, expand, copy, download, regenerate, share, more.
+- Static confirmation replacing a real interaction: a reference button that opens a picker, saved-item menu, folder selector, source chooser, restore dialog, or modal cannot be replicated by showing a text note or toast.
+- Auth-only probing: logged-out gates are not enough. If logged-in access is available, verify the authenticated behavior and current-state label for the same control.
+- Mode-specific omissions: Prompt / custom-content / upload / restore modes can have different controls, persistence, CTA states, and result routing; enumerate each mode after switching.
 - Menus that look right but do not model the product: ellipsis actions, nested downloads, remix / edit follow-ups, move-to dialogs, sort menus, filter menus, bulk menus, disabled destructive actions, and outside-click dismissal.
+- Picker contract gaps: missing option list, create/select/clear actions, current selection disabled state, outside-click / escape behavior, mobile placement, refresh persistence, or downstream assignment to the generated / moved item.
+- Shared-state split brain: generator selection, saved-item picker, workspace list, folder breadcrumb, result row, and history rail disagree about the active workspace / folder / saved content.
 - Hidden state changes: selected tabs, mode switches, advanced toggles, uploaded / selected source state, draft / restore state.
 - Region replacement after workflow progress: examples / showcases may disappear once user content exists; result panels may switch into task lists, history, folders, queues, or workspaces.
 - User feedback: character counters, saved / restored notices, disabled reasons, validation text, empty states, loading / progress, error recovery.
@@ -203,6 +214,7 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
 - Persistent-state mismatch: folders, moved items, likes / dislikes, saved filters, history, and user preferences implemented as local-only state when they should be account / workspace data.
 - Hydration mismatch: client-only localStorage, random values, dates, locale formatting, or environment branches changing visible counts / labels between server render and client render.
 - Backend mismatch: UI fields not sent, sent fields not documented, fake enabled buttons for unsupported APIs, missing auth / quota / polling / webhooks, missing migrations / RLS / ownership checks for new persisted state.
+- Browser automation false positives: clicking by visible text can hit the wrong helper, example, or hidden duplicate. Scope interactions by region, role, inventory ID, and exact control label before accepting evidence.
 - Mobile details: sticky CTA, bottom nav, no horizontal overflow, toolbars wrapping cleanly, text fitting inside controls, hit-target sizing.
 - Layout constraints: sticky / fixed / docked regions, independent scroll containers, overlay vs reserved-space behavior, z-layer and backdrop rules, safe-area insets, keyboard avoidance, and collision with bottom nav / FAB / toast / cookie bars.
 - Hover-only reveals, keyboard shortcuts (`?` / `/` / `ctrl+k`), right-click menus, drag-and-drop reorder — invisible without the step-4 hidden-states pass.
@@ -278,6 +290,7 @@ Every deliverable, regardless of depth, must include:
 - Page region relationship model with `Z*` IDs, ownership, dependencies, emitted events, updates, Region Layout Constraints, responsive behavior, and source/confidence.
 - UI / component inventory.
 - Interaction behavior matrix.
+- Control Intent Ledger covering primary, secondary, icon-only, picker, saved-item, and result-routing controls.
 - API / backend mapping table (or `no backend work in scope` if research-only).
 - Replication PRD for implementation-ready audits, with region contracts and cross-region interaction contracts.
 - Prioritized gap list separating "can implement now" vs "needs API / integration / data preparation".

@@ -87,14 +87,29 @@ Without one of these, the skill falls back to static HTML fetch and **every inte
 ```
 website-replication-skill/
 ├── SKILL.md                          # Entry point — agent loads this first
+├── SKILL.zh.md                       # Chinese mirror (humans read; agent loads the English)
+├── CHANGELOG.md                      # Versioned change history (SemVer)
 ├── agents/
 │   └── openai.yaml                   # OpenAI Codex skill metadata
 ├── references/
 │   ├── output-template.md            # Implementation-ready deliverable
-│   ├── quick-audit-template.md       # ≤1h single-page/workflow audit
-│   └── parity-checklist.md           # Coverage self-check
+│   ├── quick-audit-template.md       # ≤1h single-page / workflow audit
+│   ├── prd-template.md               # Replication PRD handoff
+│   ├── region-model-template.md      # Page region relationship model
+│   ├── inventory-template.md         # Interactive-inventory format
+│   ├── manifest-template.md          # Cross-audit snapshot index
+│   ├── parity-checklist.md           # Coverage self-check
+│   ├── dom-enumeration.js            # Interactive-element enumerator (browser)
+│   ├── dom-distill.js                # Compact DOM outliner (browser)
+│   ├── design-tokens.js              # getComputedStyle token histogram (browser)
+│   ├── state-diff.js                 # Diff two distill snapshots (Node)
+│   ├── network-cluster.js            # Cluster captured requests (Node)
+│   └── coverage.js                   # Coverage gate — non-zero exit (Node)
+├── scripts/
+│   └── validate-skill.mjs            # Self-check: script syntax + template contracts
 ├── examples/
-│   └── sample-audit.md               # Fictional walkthrough (no real data)
+│   ├── sample-audit.md               # Fictional end-to-end walkthrough (no real data)
+│   └── sample-audit-gemini.md        # Real anonymous-tier audit (redacted)
 ├── LICENSE                           # MIT
 ├── .gitignore
 └── README.md
@@ -287,14 +302,29 @@ skill 强制执行**证据脱敏**：cookies、auth headers、tokens、客户数
 ```
 website-replication-skill/
 ├── SKILL.md                          # Agent 入口，最先加载
+├── SKILL.zh.md                       # 中文镜像（给人读；agent 仍加载英文版）
+├── CHANGELOG.md                      # 版本变更记录（SemVer）
 ├── agents/
 │   └── openai.yaml                   # OpenAI Codex skill 元数据
 ├── references/
 │   ├── output-template.md            # 可落地的完整交付模板
 │   ├── quick-audit-template.md       # ≤1h 单页 / 单流程审计
-│   └── parity-checklist.md           # 覆盖度自检清单
+│   ├── prd-template.md               # 复刻 PRD 交接模板
+│   ├── region-model-template.md      # 页面区域关系模型
+│   ├── inventory-template.md         # 交互清单格式
+│   ├── manifest-template.md          # 跨次审计截图索引
+│   ├── parity-checklist.md           # 覆盖度自检清单
+│   ├── dom-enumeration.js            # 交互元素枚举器（浏览器）
+│   ├── dom-distill.js                # DOM 结构精简器（浏览器）
+│   ├── design-tokens.js              # getComputedStyle 设计 token 直方图（浏览器）
+│   ├── state-diff.js                 # 两份 distill 快照 diff（Node）
+│   ├── network-cluster.js            # 网络请求聚类（Node）
+│   └── coverage.js                   # 覆盖度 gate — 非零退出码（Node）
+├── scripts/
+│   └── validate-skill.mjs            # 自检：脚本语法 + 模板契约
 ├── examples/
-│   └── sample-audit.md               # 虚构样例（无真实数据）
+│   ├── sample-audit.md               # 虚构端到端样例（无真实数据）
+│   └── sample-audit-gemini.md        # 真实匿名层审计（已脱敏）
 ├── LICENSE                           # MIT
 ├── .gitignore
 └── README.md

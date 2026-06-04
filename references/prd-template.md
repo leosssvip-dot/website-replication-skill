@@ -95,13 +95,23 @@ Acceptance Criteria:
 | --- | --- | --- | --- | --- | --- | --- |
 | C1 | Z1 | submit valid form | Z2 | empty -> loading; then result/error | create task + poll status |  |
 
-## 6. Data And API Contracts
+## 6. Control And Picker Requirements
+
+Convert the audit's Control Intent Ledger into build requirements. Include every primary, secondary, icon-only, picker, saved-item, and result-routing control that affects user workflow or persisted state.
+
+| Requirement ID | Control ID | Region | Required Behavior | Auth / Gate Behavior | Persistence | Cross-Region Updates | Result Routing | Acceptance |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| R-C1 | i000 | Z1 | opens picker; select updates current label | anonymous gates; authenticated opens | workspace-persistent | Z1 label + Z2 list + Z3 breadcrumb | created item lands in selected destination |  |
+
+Picker / saved-item controls must prove open, option list, current selection, select / create / clear when present, close behavior, refresh persistence, and downstream submit or move behavior. A static confirmation is not acceptable unless the reference is also static.
+
+## 7. Data And API Contracts
 
 | Feature | UI Field / Event | Target Payload | Validation | Response Handling | Persistence | Source |
 | --- | --- | --- | --- | --- | --- | --- |
 |  |  |  |  |  |  | observed / documented / inferred |
 
-## 7. State Machines
+## 8. State Machines
 
 ### Page State
 
@@ -125,7 +135,7 @@ stateDiagram-v2
 | completed |  |  |  |  |
 | failed |  |  |  |  |
 
-## 8. Responsive And Accessibility Requirements
+## 9. Responsive And Accessibility Requirements
 
 - Desktop layout:
 - Tablet layout:
@@ -137,33 +147,37 @@ stateDiagram-v2
 - Fixed / sticky / docked regions:
 - Safe-area and keyboard avoidance:
 
-## 9. Implementation Plan
+## 10. Implementation Plan
 
 | Phase | Work | Readiness | Dependencies | Acceptance | Verification |
 | --- | --- | --- | --- | --- | --- |
 | 1 |  | can implement now / needs preparation |  |  |  |
 
-## 10. Verification Plan
+## 11. Verification Plan
 
 - Unit/component tests:
 - Payload contract tests:
 - API route tests:
 - Browser flow tests:
+- Control intent / picker tests:
+- Persistence and result-routing tests:
 - Desktop/mobile screenshot checks:
 - Region relationship checks:
 - Evidence redaction check:
 
-## 11. Open Questions And Blockers
+## 12. Open Questions And Blockers
 
 | Item | Type | Blocking? | Owner / Next Step |
 | --- | --- | --- | --- |
 |  | unknown / blocked / decision | yes / no |  |
 
-## 12. PRD Completeness Checklist
+## 13. PRD Completeness Checklist
 
 - [ ] Every `Z*` region has a requirement contract.
 - [ ] Every `Z*` region has layout constraints: placement, anchor target, positioning mode, sizing, scroll behavior, layering / containment, responsive transform, and collision rules.
 - [ ] Every cross-region dependency has a contract ID.
+- [ ] Every meaningful control has a Control / Picker requirement or an explicit `not applicable` reason.
+- [ ] Picker / saved-item controls specify authenticated behavior, option list, current state label, create / select / clear behavior where present, close behavior, persistence, and downstream result effect.
 - [ ] Input regions specify emitted events and payload shape.
 - [ ] Output regions specify consumed state and update triggers.
 - [ ] Empty/loading/error/success states are specified where relevant.

@@ -52,7 +52,7 @@
 | 2 | URL deep-link with `?prompt=foo` or similar query param | `not probed in this session` — would test whether anonymous deep-link pre-fills the textbox |
 | 3 | Theme switcher behavior from Settings → 主题 menu item | `not probed in this session` — sub-menu contents and persistence rules unknown |
 
-Three reflection candidates identified per skill step 7, all three skipped in this run to keep the sample focused on the primary surfaces. A second pass would resolve them in ≤ 5 minutes of probing.
+Three reflection candidates identified per skill step 8 (reflection + coverage gate), all three skipped in this run to keep the sample focused on the primary surfaces. A second pass would resolve them in ≤ 5 minutes of probing.
 
 ## 3. Executive Gap Summary
 

@@ -41,6 +41,9 @@ Mark claim source: `observed`, `documented`, or `inferred`.
 - Mode / tab switching and preserved-vs-discarded state between modes.
 - Helper actions: randomize, examples, suggestions, chips, builder panels, inline tools.
 - Text tools: clear, save, restore, copy, expand / fullscreen, insert, counters.
+- Control intent ledger complete for primary, secondary, icon-only, picker, saved-item, and result-routing controls.
+- Picker / selector controls: logged-out gate, logged-in open behavior, option list, current selected label, select / create / clear behavior where present, close behavior, refresh persistence, and downstream submit / move effect.
+- Saved content controls: save, restore / use saved, delete / clear saved, and persistence scope are observed separately rather than inferred from icon shape.
 - Upload / source tools: local upload, library source, drag / drop, remove, preview.
 - Advanced settings: defaults, collapsed state, validation, reset.
 - Submission: disabled criteria, auth redirect, quota / paywall gate, loading / progress, cancellation.
@@ -50,6 +53,7 @@ Mark claim source: `observed`, `documented`, or `inferred`.
 - Pending vs completed row parity: same row proportions and layout unless the reference clearly changes them; pending rows should not feel like a separate product.
 - Menus and submenus: ellipsis / kebab actions, remix / edit action menus, download submenus, move-to pickers, filter menus, sort menus, outside-click dismissal, disabled actions, destructive actions.
 - Workspace / folder behavior when applicable: breadcrumb clickability, directory view, create folder / workspace, archive view, item move-to destination picker, current destination disabled, active-folder item counts.
+- Shared-state consistency: generator destination / source selection, saved-item picker, workspace or folder view, result row, and history rail agree after selection and after refresh.
 - Selection and bulk actions: row checkbox placement, select-all, selected-count menu, bulk move, bulk download, disabled bulk delete, and how selection interacts with filters, pagination, and current workspace / collection.
 - Global controls: fixed / sticky player or action rail, previous / next, seek, mute, close, like / dislike, share, and whether the control blocks CTAs, pagination, list rows, or mobile bottom navigation.
 - Filters and sorting: actual filter semantics, default filters, active filter summary, reset behavior, sort icon / direction, and empty-result recovery.
@@ -144,9 +148,11 @@ Mark claim source: `observed`, `documented`, or `inferred`.
 - Region relationship tests for primary cross-region contracts.
 - API route tests for validation, auth, and failure paths.
 - Persistence tests for account / workspace state across reload, origin / port change, server restart, or a fresh client where applicable.
+- Picker and saved-item tests for open/select/create/clear/close behavior, current label persistence, and selected destination applied to the created / moved item.
 - Hydration tests or SSR/client mismatch checks for visible counts, labels, folders, filters, and local-only state.
 - Browser screenshots for desktop and mobile.
 - DOM checks: no overflow, expected controls visible, popovers dismiss, CTA / player / pagination do not overlap, bounded panels do not stretch the page, forbidden copied tokens / assets absent.
+- Browser automation evidence is scoped by region / role / inventory ID so duplicate visible text or hidden controls cannot create false positives.
 - Evidence redaction re-check before delivering the report.
 - Build / typecheck / lint.
 - Manual or automated test for the original missed behavior that prompted the audit.

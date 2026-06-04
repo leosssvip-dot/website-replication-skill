@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// website-replication-skill — Coverage calculator (Step 7 gate)
+// website-replication-skill — Coverage calculator (Step 8 gate)
 //
 // Runtime: Node.js (run from a shell)
 // Usage:
@@ -96,13 +96,19 @@ for (const r of rows) {
     probedTick++;
   } else if (p === 'o' || p === '○' || p === 'observed') {
     probedObserved++;
-  } else if (p === '✗' || p === 'x' || p === '') {
+  } else {
+    // Everything else counts as un-probed: ✗, x, blank, OR an unrecognized
+    // marker like "partial" / "todo" / "n/a". Unknown values must not vanish
+    // into a silent dead zone — they belong in the actionable list, otherwise
+    // the gate can read green while real rows were never probed.
     skipped++;
     const hasBlocked = /blocked/i.test(r.result);
     if (hasBlocked) {
       skippedBlocked++;
     } else {
-      unprobedNoBlocked.push({ id: r.id, reason: r.result || '(no reason given)' });
+      const reason =
+        r.result || (p ? `unrecognized Probed value "${p}"` : '(no reason given)');
+      unprobedNoBlocked.push({ id: r.id, reason });
     }
   }
 }
@@ -110,7 +116,9 @@ for (const r of rows) {
 const enumerated = rows.length;
 const covered = probedTick + probedObserved;
 const coveragePct = enumerated > 0 ? Math.round((covered / enumerated) * 1000) / 10 : 0;
-const passes = coveragePct >= threshold || unprobedNoBlocked.length === 0;
+// An inventory with a header but zero element rows is an enumeration failure,
+// not full coverage. Never let it read green.
+const passes = enumerated > 0 && (coveragePct >= threshold || unprobedNoBlocked.length === 0);
 
 const report = [];
 report.push(`# Coverage — ${path.basename(file)}`);
@@ -124,6 +132,10 @@ report.push('');
 
 if (passes) {
   report.push(`## ✓ Coverage gate PASSED`);
+} else if (enumerated === 0) {
+  report.push(`## ✗ Coverage gate FAILED`);
+  report.push('');
+  report.push('Inventory table found, but it has **0 element rows**. Enumeration likely failed (shadow DOM, iframe, or a script error) or the table body is empty. Re-run `dom-enumeration.js` against the page — an empty inventory is not full coverage.');
 } else {
   report.push(`## ✗ Coverage gate FAILED`);
   report.push('');

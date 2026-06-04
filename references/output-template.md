@@ -146,6 +146,14 @@ Use this for app/tool pages where the same regions change after user action. It 
 
 Rows below are *examples* of common interactions to consider. Replace with the actual user actions in scope; do not leave generic placeholders in the final deliverable.
 
+### Control Intent Ledger
+
+Use this table for primary, secondary, icon-only, picker, saved-item, and result-routing controls. See [parity-trap-ledger.md](parity-trap-ledger.md). A control with missing intent, auth state, persistence, region effect, or verification evidence belongs in the gap list.
+
+| Control ID | Region | Visible Affordance | Observed Trigger | Complete Observed Outcome | Auth States | Persistence Class | Backend / API Mapping | Cross-Region Updates | Post-Submit / Result Effect | Target Requirement | Test / Browser Evidence | Remaining Gap |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| i000 | Z1 |  | click / hover / keyboard |  | logged-out / logged-in / quota / paid | local / session / account / workspace / shared |  |  |  |  |  |  |
+
 | User Action | Source Region | Target Region | Competitor Result | Target Result | Status | Source | Confidence | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Primary CTA | Z1 | Z2 |  |  |  | observed / documented / inferred |  |  |
