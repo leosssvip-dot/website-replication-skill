@@ -11,6 +11,14 @@ Planned for the next milestones — not yet implemented:
 - A second real audit on a fully public site (no auth gating) to complement the Gemini anonymous-tier sample, demonstrating 100% coverage.
 - Stress-test the v0.3 scripts on diverse sites (heavy-shadow-DOM SPA, large data table, infinite-scroll feed).
 
+## [0.4.3] — 2026-06-05
+
+### Changed — generic implementation feedback lessons
+
+- Tightened the workflow around destination correctness, list-loading mechanics, popover geometry, and layout density without adding project-specific examples, product names, screenshots, or private data.
+- Added underfilled and overflowing list-state probing so pagination, infinite-scroll, and scroll-to-load cannot pass when visible count text says more items exist but no trigger appends rows.
+- Added implementation feedback guidance: after applying an audit, re-check the target UI against the same Control Intent Ledger and require targeted evidence for the original parity miss.
+
 ## [0.4.2] — 2026-06-04
 
 ### Added — Control Intent Ledger

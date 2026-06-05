@@ -38,11 +38,13 @@
    - 保存脱敏证据：截图、控件清单、网络调用、console errors、以及一份**结构化 DOM 快照**。DOM 快照三选一：(a) 浏览器 MCP 自带的 a11y 树工具（chrome-devtools-mcp 的 `take_snapshot` 等）首选；(b) 跑 [references/dom-distill.js](references/dom-distill.js) 产出 markdown 大纲，比原始 outerHTML 小 50-100×，框架噪声已剔除；(c) 实在不行才存 raw `outerHTML`，存盘后**不要再读回 context**。**禁止**直接 `evaluate` `document.documentElement.outerHTML` 进 agent context——这是 skill 警告的最大 token 黑洞。网络抓包**永远新抓，不复用**。
    - 动态页面要在交互后再观察，不能只看首帧。
    - 每条主流程都要捕获 submit 前、进行中、完成后、空态、筛选 / 选中态、移动端态。不要假设 examples / showcase / 空态在有真实用户内容后仍然保留。
+   - list / workspace 类流程要捕获足够内容的状态，确保能验证参考站的加载模型。尽量同时记录首批未撑满和列表已溢出的状态；写清批量大小、可见数量文案、触发手势，以及 search / filter / sort / 容器切换后的 reset 行为。
    - 每个 claim 标 `observed` / `documented` / `inferred` / `blocked` / `not applicable`。复用证据仍是 `observed`（30 天窗口是可靠性预算）。
+   - 启动 Control Intent Ledger（见 [references/parity-trap-ledger.md](references/parity-trap-ledger.md)）。范围内每个可见控件后续都必须有 observed intent、完整 outcome、auth / persistence class、region effect、backend mapping 与验证证据。
 
 2. **抽取 UI 系统**
    - 在浏览器 MCP eval 里跑 [references/design-tokens.js](references/design-tokens.js)。脚本对可见元素做 `getComputedStyle` 直方图，输出"色彩 / 字体 / 字号 / 圆角 / 阴影 / 间距"的 top 值表 —— 直接拿来填 Visual Tokens 段，不要靠眼力估 CSS。
-   - 文档化布局、网格、shell / 导航、密度、间距、圆角、边框、色彩、字体、媒体处理、阴影、动效——脚本给数字，你写综合。
+   - 文档化布局、网格、shell / 导航、密度、间距、圆角、边框、色彩、字体、媒体处理、阴影、动效——脚本给数字，你写综合。列表密集页面还要记录 header / controls 的高度预算，以及 footer / bottom rail 之上还剩多少可见行。
    - 文档化布局关系，而不只是单个组件：列宽比例、何时堆叠、谁拥有滚动、sticky / fixed 底部栏、sidebar 是否有独立底部区、列表是分页 / 内部滚动 / 页面滚动，以及全局控件的碰撞规则。
    - 建组件清单：导航、卡片、tab、segmented control、输入框、上传、chip、工具栏、modal、drawer、结果项、history、gating UI。
    - 用**目标产品自己的 token 与文案**写 HTML/CSS 示例，仅演示结构模式（如 icon + label 的 flex 布局）。不要粘竞品 class 名、精确间距、文案。
@@ -55,7 +57,7 @@
    - 给每个主要区域分配稳定 `Z*` ID。证据来自截图位置、DOM landmark、a11y tree、inventory ID、bounding box。
    - 每个区域必须写：purpose、owned state、consumed state、emitted events、updated regions、empty/loading/error/success states、responsive behavior、source、confidence。
    - 每个区域必须写 **Region Layout Constraints**：Placement、Anchor Target、Positioning Mode、sizing rule、scroll behavior、layering / containment、responsive transform、Collision Rules、evidence、source、confidence。`bottom-docked`、`sticky within container`、`fixed to viewport`、`overlay`、`independently scrollable`、`safe-area-aware`、`keyboard-avoiding` 这类术语都放在这里。
-   - list / workspace 类产品要显式建模：列表容器、folder / collection 导航、active selection、分页 / 内部滚动、filter summary、footer alignment。这些是区域职责，不是纯视觉细节。
+   - list / workspace 类产品要显式建模：列表容器、folder / collection 导航、active selection、分页 / 内部滚动 / infinite scroll / scroll-to-load、filter summary、可见数量标签、首批未撑满状态、footer alignment。这些是区域职责，不是纯视觉细节。
    - 显式建模跨区域依赖。例如：`Z1 Generator Panel -> submit payload -> Z2 Results Panel -> loading/result/error`；`Z3 History -> restore job -> Z1 form + Z2 result`。
    - auth、credits、selected item、current job、cart、permissions 等影响多个区域的共享 / gating state，要作为独立依赖处理。
    - implementation-ready audit 必须有 region relationship table，且至少有一个关系图或状态机。未知关系标 `inferred` 或 `blocked`，不要省略。
@@ -63,12 +65,15 @@
 4. **枚举并探测交互**
    - **先枚举，再点击**。在浏览器自动化里跑 [references/dom-enumeration.js](references/dom-enumeration.js)（DevTools 控制台 eval 或 browser-MCP 的 eval 接口）。markdown 输出保存为 `audit/<site-slug>/snapshots/<date>/<page-slug>-inventory.md`，格式见 [references/inventory-template.md](references/inventory-template.md)。脚本已处理选择器优先级、shadow DOM 穿透、`cursor:pointer` 探测，**不要自己重新发明枚举逻辑**。
    - 按 ID 逐行走 inventory。先把每行映射到 `Z*` 区域，再填 `Probed`（`✓` 点过 / `o` URL/属性观察 / `✗` 跳过）、`Result`（动作 + 结果 + 观察到的网络调用 + `observed` / `inferred` / `blocked` 标签）、`Notes`。跳过任何 ID 都必须在 `Result` 里写原因。
+   - 每个主要、次要、icon-only 控件都要更新 Control Intent Ledger。控件只有在 trigger、目标 UI、当前态 label、create / select / clear / restore 行为、持久化类别、下游结果影响都已实现、明确差异化或标 blocked 后，才算已复刻。
+   - 验证目的地正确性，而不只是"点了有反应"。view / preview / open / use / download / share / 导航类控件要记录参考站打开的是页内 modal、side panel、drawer、route、file、picker、外部目的地，还是 disabled 态，并说明这个目的地是否服务当前工作流。
    - **每个非平凡状态变化**（modal 打开、drawer 展开、mode 切换、submit 后）前后各跑一次 [references/dom-distill.js](references/dom-distill.js)，再用 [references/state-diff.js](references/state-diff.js) 比对：`node references/state-diff.js before.md after.md`。diff 输出填进 `Result` 列——取代散文描述，让"发生了什么"变成机械结果。
    - 打开每一个 menu / submenu：kebab / ellipsis、action dropdown、filter、sort、bulk action、move / folder picker、download submenu、remix / edit follow-up menu。
-   - 验证 popover 机制：点击空白关闭、Esc / close 行为（如存在）、disabled menu item、危险操作项、嵌套 submenu 位置、viewport 裁切、移动端位置。
+   - 验证 popover 机制：点击空白关闭、Esc / close 行为（如存在）、disabled menu item、危险操作项、嵌套 submenu 位置、viewport 裁切、移动端位置，以及 popover 打开后父级 / 相邻控件是否仍可见且可用。
    - icon-only 与看起来装饰性的控件都按"有功能"处理直到反证。save / clear / copy / expand / randomize / regenerate / share / more — 一个一个 probe。
    - 每条交互还要记：validation、disabled、loading、optimistic update、error、success 输出、submit 后动作、auth / permission 重定向、paywall / quota、移动端 sticky。
    - 有列表时必须 probe 选择与批量行为：row checkbox 位置、select-all、selected-count actions、bulk move / download / delete，以及 selection 如何与 filter / pagination 交互。
+   - 把 pagination、infinite-scroll、scroll-to-load 当状态机 probe：首批大小、`N of M` 状态文案、页面 / 嵌套滚动归属、wheel / touch / sentinel / button 触发、loading 指示、终态、search / filter / sort / 容器切换后的 reset。若 UI 显示还有更多内容但没有触发追加，必须留在 gap list。
    - 全局控件要与 row 控件分开 probe：全局播放器、persistent action bar、sidebar、底部 CTA、floating helper、fixed footer 往往有独立状态，不能遮挡主 CTA、列表内容、分页或移动端底栏。
    - 动态页面在每次重大状态变化（mode 切换、modal 打开、submit 后）后重跑枚举脚本。重跑前设置 `window.__websiteReplicationInventoryOptions = { startIndex: <下一个未使用的数字 ID> }`，避免追加行复用旧 ID；新行用 `<!-- After <state change> -->` 分隔追加。
 
@@ -80,7 +85,7 @@
    - **键盘快捷键**：至少试 `?`（帮助层）、`/`（搜索聚焦）、`ctrl/cmd+k`（命令面板）、`esc`（关 modal/drawer）、`enter`（提交）、方向键（列表导航）、tab 顺序与陷阱、undo / redo。
    - **右键 / 长按**：主内容区、列表项、富内容表面都试一遍，看是否有自定义 context menu。
    - **拖拽 / 重排**：试列表项、文件、卡片的重排；记录 reorder API 和跨容器移动。
-   - **滚动触发**：滚到底（infinite scroll / lazy load / sticky CTA / "回到顶部"）；嵌套容器内滚动；移动端底栏出现规律。
+   - **滚动触发**：滚到底（infinite scroll / lazy load / sticky CTA / "回到顶部"）；嵌套容器内滚动；同时 probe 首批未撑满和已溢出的列表状态；移动端底栏出现规律。
    - **输入边界**：空提交 · 最大长度 · 粘贴富文本 · 粘贴非法字符 · 输入法组合态 · disabled 态尝试操作。
    - **网络状态**：DevTools 限速到 slow 3G 看 skeleton / spinner；切 offline 看错误 UX；强制返回 5xx（"Network → Block" + replay）看恢复 affordance。
    - **URL / 历史**：直接 deep-link 进某状态 · 在多个 mode 间 back / forward · 流程进行中 refresh · 列表项右键新标签。
@@ -106,7 +111,7 @@
 8. **反思并核对覆盖率**（强制 gate，在 step 9 前）
    - 对每份 per-page inventory 跑 [references/coverage.js](references/coverage.js)：`node references/coverage.js audit/<site>/snapshots/<date>/<page>-inventory.md [--threshold=90]`。脚本解析 `Probed` 列、统计 `✓` / `o` / `✗`、算覆盖率，**覆盖率 < 阈值且有 ✗ 行没写 `blocked` 理由时退出码 ≠ 0**。这是正式 gate，不靠 agent 自报数字。
    - 脚本退出码 ≠ 0 时，按它列出的 ID 回 step 4 补，不许进 step 9。
-   - 显式问自己：*"鉴于这个产品类型，我最可能漏掉的三件事是什么？"* 写下三个候选 — 常见盲点：submit 成功后状态、错误恢复路径、设置 / 偏好、history / undo、分享 / 导出、移动端专属 affordance、付费层暗示在免费层的可见线索 — 然后 probe 每一个，记录结果。
+   - 显式问自己：*"鉴于这个产品类型，我最可能漏掉的三件事是什么？"* 写下三个候选 — 常见盲点：submit 成功后状态、错误恢复路径、设置 / 偏好、history / undo、分享 / 导出、移动端专属 affordance、付费层暗示在免费层的可见线索、目的地表面错配、列表加载 underflow、菜单几何遮挡、控制区过高 — 然后 probe 每一个，记录结果。
    - 对照最终态的 DOM 复核 inventory。交互打开的新元素（modal 内容、drawer 内容、展开面板）必须枚举并 probe。
    - 复核 region model：每个主要区域都有 purpose、owned/consumed state、emitted events、Region Layout Constraints，并至少有一个 relationship 或明确的 `not applicable` 理由。
    - 把结果写进交付物的 *Interaction Coverage* 与 *Region Model Coverage* 段。**只有走完这一轮才能进 step 9**。
@@ -118,6 +123,7 @@
    - 把审计结果整成 parity matrix：竞品行为、目标实现、API 映射、就绪度、风险、验收标准。
    - 按用户工作流影响优先级排序：主路径 → 结果 / submit 后行为 → history → 二级页面 → SEO / 支持页。
    - 拆"现在就能实施"与"需要 API / 集成 / 数据准备"两堆。**不要**把被阻塞的后端工作呈现为 ready。
+   - 如果根据审计做了实现，改完后用同一份 Control Intent Ledger 复核目标 UI。控件只有到达预期目的地表面，并改变预期的可见、持久化或提交状态，才算通过。
    - 验证遵守目标仓库现有惯例（CLAUDE.md / 测试框架）。新交互行为合并前至少补 happy-path 测试 + payload 契约测试。
    - 验证手段：build / typecheck / lint、截图、DOM overflow / 响应式检查、API 契约检查、持久化检查、hydration 检查，以及至少一个覆盖原始 parity miss 的状态转换测试。
 
@@ -125,13 +131,16 @@
 
 - icon-only 按钮无行为：clear、save、randomize、expand、copy、download、regenerate、share、more。
 - 菜单看起来像但产品逻辑没建模：ellipsis actions、nested downloads、remix / edit follow-up、move-to dialog、sort menu、filter menu、bulk menu、disabled destructive action、点击空白关闭。
+- 目的地错配：view / preview / open / use 控件确实跳转了，但参考站实际打开的是 modal、side panel、drawer、picker、file 或当前工作流相关的 disabled 态。
+- 菜单几何错配：嵌套或相邻 popover 存在，但遮住父级动作、row 控件、CTA、分页或移动端导航。
 - 隐藏状态变化：tab 选中、mode 切换、advanced 开关、上传 / 已选源状态、draft / restore。
 - 流程推进后的区域替换：有真实内容后 examples / showcase 可能消失，result panel 可能切成 task list、history、folder、queue 或 workspace。
 - 用户反馈：字数计数、已保存 / 已恢复提示、disabled 原因、validation 文案、空态、loading / progress、错误恢复。
 - 结果 / submit 后：下载、保存到库、编辑 / 续写、分享、metadata、相关项、来源标注。
-- 布局归属错：右侧面板用页面滚动而不是内部滚动、sidebar 没有独立吸底账号 / 升级区、全局播放器遮挡主 CTA、sticky footer 跨列不齐、面板过早堆叠、列表撑高页面。
+- 布局归属错：右侧面板用页面滚动而不是内部滚动、sidebar 没有独立吸底账号 / 升级区、全局播放器遮挡主 CTA、sticky footer 跨列不齐、面板过早堆叠、header / control stack 过高、列表撑高页面。
 - row 状态不一致：pending、completed、failed、selected、active-playing 行的信息架构应一致，除非参考站明确分离。
-- list 语义漏掉：select-all、row checkbox 位置、selected-count menu、pagination、filter summary、reset control、sort icon / direction。
+- list 语义漏掉：select-all、row checkbox 位置、selected-count menu、pagination、scroll-to-load / infinite-scroll 触发、批量大小、可见数量标签、filter summary、reset control、sort icon / direction。
+- scroll-to-load underflow：首批数据没有撑满滚动容器，导致只监听 `onScroll` 的实现永远到不了加载触发点，但状态文案仍显示还有更多内容。
 - 持久化边界错：folder、moved item、like / dislike、saved filter、history、user preference 应该是 account / workspace 数据，却只做成 local-only。
 - Hydration mismatch：client-only localStorage、random、date、locale formatting、环境分支导致 server render 与 client render 的 count / label 不一致。
 - 后端不匹配：UI 字段没送、送了的字段无文档、不可用 API 的伪 enabled 按钮、缺 auth / 配额 / polling / webhook、缺 migration / RLS / ownership check。
@@ -171,6 +180,10 @@
 | 反思轮（step 8）说不出具体漏什么 | Agent 在现有内容上饱和了 | 用 [references/parity-checklist.md](references/parity-checklist.md) 的"Hidden States And Coverage"段，挑前三个还没勾的项做。 |
 | region model 只有"左区 / 右区"但无关系 | Agent 只标了布局，没有标职责 | 改写成职责：input/config、output/result、history/restore、gating/auth，并补 ownership、dependencies、events、updates。 |
 | PRD 只是 gap list | 用了输出模板但没做 PRD handoff | 加载 [references/prd-template.md](references/prd-template.md)，把每个重要区域关系转成可测试需求。 |
+| scroll-to-load 状态显示还有更多，但行没有追加 | listener 绑错滚动容器、首批未撑满，或参考站真实触发方式未观察到 | 同时 probe 页面与嵌套滚动容器的 wheel / touch / sentinel / button 触发；目标计划里加入 fallback 或 auto-fill 行为，直到真实追加行前保持 gap。 |
+| 控件打开了目的地，但工作流仍不对 | 只根据 label 推断目的地，没有观察参考站 | 在 Control Intent Ledger 记录目的地类别：modal、panel、drawer、route、file、picker、external target、disabled state 或 blocked；目标验证必须匹配同类目的地或写明接受差异。 |
+| popover / submenu 遮挡周边控件 | 缺 anchor、collision、宽度或层级规则 | 截 focused screenshot 和 bounds；把碰撞行为写进 Region Layout Constraints，并要求桌面 / 移动端 overlap 检查。 |
+| header 或 filter 区域占用过高 | 没测密度与可见行预算 | 记录 control-stack 高度、首个可见行位置、可见行数，以及桌面 / 移动端 footer / bottom rail 遮挡。 |
 | 截图意外把 PII 进 git | 审脱敏漏了 | `git rm --cached <路径>` 撤掉、脱敏、重新 commit。长期换成单行 `audit/`。 |
 
 ## Token Budget（避免 context 爆炸）

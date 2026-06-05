@@ -1,5 +1,5 @@
 name: website-replication-skill
-version: 0.4.2
+version: 0.4.3
 interface:
   display_name: "Website Replication"
   short_description: "Audit region logic, state, persistence, and parity PRDs"

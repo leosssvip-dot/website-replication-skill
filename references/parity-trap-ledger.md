@@ -14,6 +14,13 @@ Add this table to the audit report or link it from the report.
 
 ## Minimum Acceptance By Control Type
 
+### Destination / routing controls
+
+- The observed destination class is recorded: in-place modal, side panel, drawer, route, file download / preview, picker, external target, disabled state, or blocked.
+- Navigation is not enough evidence by itself. Verify that the destination supports the same user workflow and exposes the expected next actions.
+- If the target intentionally uses a different destination class, record the accepted difference and add verification for the changed workflow.
+- "View", "preview", "open", "use", "share", and compact icon buttons must be scoped by inventory ID and region before accepting the result.
+
 ### Picker / selector controls
 
 - Logged-out behavior is observed separately from logged-in behavior when access is available.
@@ -47,6 +54,13 @@ Add this table to the audit report or link it from the report.
 - Do not infer a magic / boost / optimize / randomize / restore / save icon from shape alone.
 - Test evidence must target the exact inventory ID or scoped role, not only visible text.
 
+### List loading controls
+
+- Record initial batch size, visible-count label, terminal state, and reset behavior after search, filter, sort, or container changes.
+- Probe both underfilled and overflowing states when possible; an `onScroll`-only trigger can fail when the first batch does not fill the container.
+- Identify the actual trigger: page scroll, nested scroll, wheel, touch, sentinel, explicit button, or automatic fill until overflow.
+- If the UI says more items exist but no rows append, keep the behavior as a gap until the trigger is observed or deliberately changed.
+
 ## Common Trap Classes
 
 | Trap | Bad Replication Smell | Prevention |
@@ -55,6 +69,9 @@ Add this table to the audit report or link it from the report.
 | Auth-only probing | Logged-out click shows login, so the logged-in flow is never checked | Probe both anonymous and authenticated states when legitimately available |
 | Mode drift | Prompt mode is close, but custom lyrics / upload / saved-source mode is missing controls | Re-enumerate inventory after every mode switch |
 | Icon semantics guessed | Save, dice, wand, restore, expand, or menu icons are implemented with guessed behavior | Record tooltip, DOM name, click result, state diff, and network side effect |
+| Destination class guessed | A control opens a route when the reference used a modal, drawer, side panel, picker, file, or disabled state | Record destination class and require target evidence for the same class or an accepted difference |
+| List-loading underflow | Status says more items exist, but first batch does not overflow so no load trigger fires | Probe underfilled and overflowing states; require append evidence or planned fallback |
+| Popover geometry missed | Submenu exists but covers the parent menu, row action, CTA, pagination, or mobile nav | Capture focused screenshot / bounds and add overlap checks |
 | Split-brain state | Generator destination differs from workspace breadcrumb or result list | Name one state owner and every region that consumes it |
 | Local-only persistence downgrade | Saved folders, lyrics, styles, reactions, filters, or history disappear after refresh / second client | Classify persistence and plan backend / schema / hydration work |
 | Result-routing miss | User selects a destination, but the created item still appears in the default list | Add acceptance proving selected destination is applied to the created item |
@@ -68,6 +85,8 @@ Before finalizing, ask and answer these in the report:
 
 - Which control did I assume was decorative before clicking it?
 - Which clicked control produced a menu, modal, picker, or state change that was not in the initial screenshot?
+- Which control reached a different destination class than its label implied?
+- Which list shows more available items, and what observed trigger appends them?
 - Which logged-in behavior differs from logged-out behavior?
 - Which selected value must affect a later submit, generated item, uploaded item, or moved item?
 - Which state would break on refresh, second device, server restart, or origin / port change?

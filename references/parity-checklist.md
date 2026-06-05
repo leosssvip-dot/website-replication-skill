@@ -26,6 +26,8 @@ Mark claim source: `observed`, `documented`, or `inferred`.
 - Page layout, columns, sticky areas, scroll containers, and region relationships.
 - Responsive breakpoints: when sidebars collapse, when secondary panels stack, whether primary and secondary work areas preserve intended proportions, and whether any panel stacks earlier than the reference.
 - Scroll ownership: full page vs internal list scroll, bounded panels, pagination footers, sticky CTA rails, fixed global players, sidebar bottom rails, and whether these areas overlap.
+- List loading model: pagination, infinite scroll, scroll-to-load, explicit load-more button, automatic fill, terminal state, and reset after search / filter / sort / container changes.
+- Underfilled list state: whether the first batch fills the scroll container; if not, how the reference still exposes or triggers loading more items.
 - Typography scale, font families, weights, letter spacing.
 - Color roles: background, panel, border, muted text, accent, success, warning, error.
 - Spacing rhythm, component density, radius, shadow, separators.
@@ -52,6 +54,8 @@ Mark claim source: `observed`, `documented`, or `inferred`.
 - State-dependent region replacement: examples / inspiration / empty states vs generated-content lists, task queues, folders, history, or result workspaces.
 - Pending vs completed row parity: same row proportions and layout unless the reference clearly changes them; pending rows should not feel like a separate product.
 - Menus and submenus: ellipsis / kebab actions, remix / edit action menus, download submenus, move-to pickers, filter menus, sort menus, outside-click dismissal, disabled actions, destructive actions.
+- Destination controls: view / preview / open / use / share / download actions reach the observed destination class (modal, side panel, drawer, route, file, picker, external target, disabled state, or blocked), not just any destination.
+- Popover geometry: parent menu, submenu, row controls, CTA, pagination, and mobile nav remain visible and usable according to the reference collision rules.
 - Workspace / folder behavior when applicable: breadcrumb clickability, directory view, create folder / workspace, archive view, item move-to destination picker, current destination disabled, active-folder item counts.
 - Shared-state consistency: generator destination / source selection, saved-item picker, workspace or folder view, result row, and history rail agree after selection and after refresh.
 - Selection and bulk actions: row checkbox placement, select-all, selected-count menu, bulk move, bulk download, disabled bulk delete, and how selection interacts with filters, pagination, and current workspace / collection.
@@ -149,6 +153,8 @@ Mark claim source: `observed`, `documented`, or `inferred`.
 - API route tests for validation, auth, and failure paths.
 - Persistence tests for account / workspace state across reload, origin / port change, server restart, or a fresh client where applicable.
 - Picker and saved-item tests for open/select/create/clear/close behavior, current label persistence, and selected destination applied to the created / moved item.
+- Destination-class tests or browser checks for view / preview / open / use controls.
+- List-loading tests or browser checks for underfilled and overflowing states, visible-count label updates, item append, terminal state, and reset after search / filter / sort.
 - Hydration tests or SSR/client mismatch checks for visible counts, labels, folders, filters, and local-only state.
 - Browser screenshots for desktop and mobile.
 - DOM checks: no overflow, expected controls visible, popovers dismiss, CTA / player / pagination do not overlap, bounded panels do not stretch the page, forbidden copied tokens / assets absent.
