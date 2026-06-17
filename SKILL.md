@@ -2,7 +2,7 @@
 name: website-replication-skill
 description: Audit a reference website or web app and produce a differentiated parity plan with page region relationships, PRD requirements, UI, interactions, API contracts, data model, and architecture. Use when benchmarking a competitor, replicating a legacy or partner site, matching product capabilities, reproducing workflow behavior with original branding, or auditing missing UI/function/API details.
 metadata:
-  version: 0.5.0
+  version: 0.6.0
 ---
 
 # Website Replication
@@ -23,12 +23,27 @@ Replicate useful product behavior, not protected expression. Do not copy logos, 
 
 A thorough audit document is not parity. The four rules below are post-mortem lessons — each is a real miss the human had to catch after a "complete" audit shipped. They override the temptation to call a feature done because it looks done.
 
-- **You cannot replicate what you did not observe — never guess an interactive feature.** Static fetch, public/landing/marketing pages, and first-render DOM cannot reveal post-login, client-side, interactive behavior: what a *Share* / *Favorite* / *More* / *Download* control actually DOES, the dialog it opens, the cascade it expands, the link it produces. `WebFetch` and HTML snapshots see *none* of this. To replicate any interactive or auth-gated feature you MUST drive the **logged-in** product and trigger the feature itself, capturing the real dialog / flow / result. If you cannot reach that state, mark it `blocked` and replicate nothing — a plausible guess ("Share copies a link") is the most expensive miss because it looks finished and ships unreviewed.
+- **You cannot replicate what you did not observe — never guess an interactive feature.** Static fetch, public/landing/marketing pages, and first-render DOM cannot reveal post-login, client-side, interactive behavior: what a *Share* / *Favorite* / *More* / *Download* control actually DOES, the dialog it opens, the cascade it expands, the link it produces. `WebFetch` and HTML snapshots see *none* of this. To replicate any interactive or auth-gated feature you MUST drive the **logged-in** product and trigger the feature itself, capturing the real dialog / flow / result. If you cannot reach that state, **pause and ask the user to log in for you** (see *Reaching Logged-In State*) before settling for `blocked`; never replicate from a guess — a plausible guess ("Share copies a link") is the most expensive miss because it looks finished and ships unreviewed.
 - **Capture full content and full depth — a representative sample is a content gap.** A multi-level category → sub-category cascade with dozens of entries is *not* replicated by a handful of top-level items. Expand every menu / cascade / list to its deepest level and record EVERY item at EVERY level. Shipping a token sample as the real thing reads as "done."
 - **Reverse-audit your replica against the source — fidelity runs both ways.** The audit covers the *source*; it never catches what your *build* got wrong. Two failure directions, both real:
   - **Under-build (dead stub):** a control that looks replicated — a tab, a kebab item, a toggle, a secondary panel — but has no wiring and no backend. Ship it functioning *exactly* like the source, or omit it. Never ship a shell that merely looks real.
   - **Over-build (phantom feature):** a control or whole feature the source does NOT have, added speculatively. Replicate what exists; add nothing the source lacks. Flag extras and remove them.
 - **A replicated front-end trigger is not done until its data and backend dependency are.** A detail / preview action needs its underlying data actually fetched and stored; a gated action (license, upgrade, export, paid download) needs its entitlement / subscription / quota check; a share action needs the public surface the link points to. A trigger wired to absent data (greyed out, empty, or a dead / raw link) is a miss. Trace each feature's data + backend dependency and verify it works with real data across states — not just that the button renders.
+
+## Reaching Logged-In State — Pause And Hand Off To The User
+
+The behavior most worth replicating (dialogs, gated actions, account / workspace state, post-submit flows) usually lives *behind login*. When an in-scope state is auth-gated and you lack access, the move is NOT to jump straight to `blocked` — it is to **pause and ask the user to authenticate for you**, then resume. A user signing into their own legitimate account is not auth-bypass; it is the normal way to reach the state. Mark `blocked` only when the user declines, cannot reach it, or it is a paid / private tier they do not have.
+
+1. **Batch the ask.** Before pausing, list every logged-in state / flow you need (share dialog, favorites, gated download, post-submit result, …) so a single login covers them all — do not pause once per feature.
+2. **Pause and hand off.** Ask the user to put you in front of the signed-in product and confirm when it is ready. Never ask for, type, or store the user's password — the *user* authenticates; you only observe.
+3. **Resume and capture.** Drive the logged-in session, trigger each feature, classify the evidence `observed`. Redact session artifacts (cookies, tokens, account IDs) per *Evidence Safety*.
+4. **Fallback.** If the user cannot or will not hand off access, mark those states `blocked`, fill what you can from public docs (`documented`), and flag the parity risk explicitly — do not guess the hidden behavior.
+
+Handoff mechanics — use whichever the harness and user allow; all keep the user in control of their own credentials:
+
+- **User's signed-in browser over CDP (preferred).** The user is already logged in; you connect to their browser's remote-debugging port and drive it. Browsers refuse remote debugging on the *in-use default profile*, so the common form is: copy the user's browser profile to a temp dir, launch *that* with a debug port (it carries the existing login), connect, drive, then delete the temp copy. The user owns the session; you never see the password.
+- **Session handoff into a throwaway context.** The user supplies an authenticated session (a one-time magic link, or a session they mint) into a fresh browser context. Treat it as a secret — use it, never persist or log it.
+- **User-drives, you-observe.** If automation cannot reach it, the user clicks through while you capture (screen-share or screenshots they provide). Slower, still `observed`.
 
 ## Out Of Scope
 
@@ -268,7 +283,7 @@ Defaults are tuned for the common case. The user may override any in their reque
 | `dom-enumeration.js` returns < 5 elements on a non-trivial page | SPA renders into shadow DOM or iframes; selectors miss them | The script pierces open shadow roots; cross-origin iframes are inaccessible by design. For same-origin iframes, re-run inside each frame's context. Closed shadow roots are unreachable — mark `inferred`. |
 | Cache hit but the live page visibly differs from the stored screenshot | Site was redesigned within the cache window | Force fresh for this row; update `Last Captured` and add MANIFEST note "redesigned since <previous date>". |
 | Network panel shows no requests for an obviously remote action | Call uses WebSocket, Server-Sent Events, or `navigator.sendBeacon` | Switch DevTools to "All" not "Fetch/XHR"; capture WS frames; tag as `observed (via WS)` or `observed (via beacon)`. |
-| Authenticated state required but credentials unavailable | Paid / SSO / private surface | Mark `blocked` in the parity matrix; do not bypass auth. Use public docs to fill `documented` rows. |
+| Authenticated state required to observe a feature | Behavior lives behind login | **Pause and ask the user to log in for you** (see *Reaching Logged-In State*), then drive their signed-in session. Mark `blocked` only if they decline / cannot, or it is a paid / private tier they lack. Never bypass auth or handle their password. |
 | `MANIFEST.md` missing on first run | Expected — no prior audit | Create with the header from [references/manifest-template.md](references/manifest-template.md); append rows as you capture. |
 | Coverage below 90% with no `blocked` reason | Step 4 was skipped or rushed | Return to step 4 against the unfilled IDs; do not submit the deliverable yet. |
 | Reflection round (step 8) produces no concrete misses | Agent saturated on existing report content | Use [references/parity-checklist.md](references/parity-checklist.md) "Hidden States And Coverage" — pick the first three items still unticked. |

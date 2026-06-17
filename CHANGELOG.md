@@ -11,6 +11,17 @@ Planned for the next milestones — not yet implemented:
 - A second real audit on a fully public site (no auth gating) to complement the Gemini anonymous-tier sample, demonstrating 100% coverage.
 - Stress-test the v0.3 scripts on diverse sites (heavy-shadow-DOM SPA, large data table, infinite-scroll feed).
 
+## [0.6.0] — 2026-06-17
+
+### Added — login handoff: pause and ask the user to authenticate, don't jump to `blocked`
+
+The skill treated auth-gated state as a wall ("mark `blocked`"), with no design for the productive middle path that real replication needs: the behavior worth copying lives behind login, and the user can usually reach it with their own legitimate account. New section **"Reaching Logged-In State — Pause And Hand Off To The User"** (after the fidelity section):
+
+- When an in-scope state is auth-gated and unreachable, **pause and ask the user to log in for you**, then resume against their signed-in session. `blocked` is the fallback (user declines / can't reach / paid tier they lack), not the first move.
+- Procedure: batch the ask (one login covers many states) → pause and hand off (never ask for / type / store the user's password; the user authenticates, you observe) → resume + capture as `observed` with session artifacts redacted → fallback to `blocked` + `documented` + flagged parity risk.
+- Handoff mechanics, all keeping the user in control of their credentials: their signed-in browser over CDP (copy profile to a temp dir + debug port, since the in-use profile can't be debugged), a session handoff into a throwaway context (treated as a secret), or user-drives-you-observe.
+- The fidelity rule and the Troubleshooting "authenticated state" row now point here instead of going straight to `blocked`. Mirrored into `SKILL.zh.md`.
+
 ## [0.5.0] — 2026-06-17
 
 ### Added — fidelity is behavior-first and two-directional (post-mortem from a real multi-feature parity miss)
