@@ -2,7 +2,7 @@
 name: website-replication-skill
 description: Audit a reference website or web app and produce a differentiated parity plan with page region relationships, PRD requirements, UI, interactions, API contracts, data model, and architecture. Use when benchmarking a competitor, replicating a legacy or partner site, matching product capabilities, reproducing workflow behavior with original branding, or auditing missing UI/function/API details.
 metadata:
-  version: 0.4.3
+  version: 0.5.0
 ---
 
 # Website Replication
@@ -18,6 +18,17 @@ Audit any reference website — typically a competitor, but the same workflow ap
 ## Core Rule
 
 Replicate useful product behavior, not protected expression. Do not copy logos, exact copy, proprietary assets, distinctive page composition, or a page structure so literally that it creates infringement risk. Preserve workflow intent, configuration fields, state handling, and backend capability mapping, while using original branding, copy, imagery, and visual rhythm unless the user explicitly asks for research-only comparison.
+
+## Fidelity Is Behavior-First And Two-Directional
+
+A thorough audit document is not parity. The four rules below are post-mortem lessons — each is a real miss the human had to catch after a "complete" audit shipped. They override the temptation to call a feature done because it looks done.
+
+- **You cannot replicate what you did not observe — never guess an interactive feature.** Static fetch, public/landing/marketing pages, and first-render DOM cannot reveal post-login, client-side, interactive behavior: what a *Share* / *Favorite* / *More* / *Download* control actually DOES, the dialog it opens, the cascade it expands, the link it produces. `WebFetch` and HTML snapshots see *none* of this. To replicate any interactive or auth-gated feature you MUST drive the **logged-in** product and trigger the feature itself, capturing the real dialog / flow / result. If you cannot reach that state, mark it `blocked` and replicate nothing — a plausible guess ("Share copies a link") is the most expensive miss because it looks finished and ships unreviewed.
+- **Capture full content and full depth — a representative sample is a content gap.** A multi-level category → sub-category cascade with dozens of entries is *not* replicated by a handful of top-level items. Expand every menu / cascade / list to its deepest level and record EVERY item at EVERY level. Shipping a token sample as the real thing reads as "done."
+- **Reverse-audit your replica against the source — fidelity runs both ways.** The audit covers the *source*; it never catches what your *build* got wrong. Two failure directions, both real:
+  - **Under-build (dead stub):** a control that looks replicated — a tab, a kebab item, a toggle, a secondary panel — but has no wiring and no backend. Ship it functioning *exactly* like the source, or omit it. Never ship a shell that merely looks real.
+  - **Over-build (phantom feature):** a control or whole feature the source does NOT have, added speculatively. Replicate what exists; add nothing the source lacks. Flag extras and remove them.
+- **A replicated front-end trigger is not done until its data and backend dependency are.** A detail / preview action needs its underlying data actually fetched and stored; a gated action (license, upgrade, export, paid download) needs its entitlement / subscription / quota check; a share action needs the public surface the link points to. A trigger wired to absent data (greyed out, empty, or a dead / raw link) is a miss. Trace each feature's data + backend dependency and verify it works with real data across states — not just that the button renders.
 
 ## Out Of Scope
 
@@ -198,9 +209,14 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
    - If implementing from the audit, re-check the target UI against the same Control Intent Ledger after changes. A control only passes when it reaches the expected destination surface and changes the expected visible, persisted, or submitted state.
    - Verification follows the target repo's existing conventions (CLAUDE.md / test framework). For new interaction behavior, add at least a happy-path test and a payload-contract test before merging.
    - Verify with build / typecheck / lint, screenshots, DOM checks for overflow / responsive behavior, API contract checks, persistence checks, hydration checks, and at least one state-transition test for the original parity miss.
+   - **Reverse-audit the built replica against the source, feature by feature.** Open both and, for every control, confirm it: (a) exists, or is honestly absent — no dead stub, no phantom extra; (b) behaves identically when you actually *trigger* it (open the dialog, toggle, expand the cascade), not just renders; (c) contains the same full content at every depth; (d) is gated the same way (auth / plan / quota / data). A stub, a guessed behavior, an extra the source lacks, or shallow content is a parity miss — fix it before claiming done. Audit completeness on the source does not certify the replica.
 
 ## Common Misses To Prevent
 
+- Guessed-not-observed behavior: any interactive/auth-gated feature implemented without driving the logged-in source and triggering it — `Share`, favorite, gated downloads, "More" cascades. See *Fidelity Is Behavior-First And Two-Directional*.
+- Phantom features: a control or feature added that the source does not have (the inverse of replication). Build only what exists.
+- Content-depth shortfall: cascades / menus / lists replicated with a representative sample instead of every item at every level.
+- Dead stubs in the replica: a tab / menu item / toggle that looks replicated but has no wiring or backend — wire it like the source or omit it.
 - Icon-only buttons with no behavior: clear, save, randomize, expand, copy, download, regenerate, share, more.
 - Static confirmation replacing a real interaction: a reference button that opens a picker, saved-item menu, folder selector, source chooser, restore dialog, or modal cannot be replicated by showing a text note or toast.
 - Auth-only probing: logged-out gates are not enough. If logged-in access is available, verify the authenticated behavior and current-state label for the same control.

@@ -11,6 +11,17 @@ Planned for the next milestones — not yet implemented:
 - A second real audit on a fully public site (no auth gating) to complement the Gemini anonymous-tier sample, demonstrating 100% coverage.
 - Stress-test the v0.3 scripts on diverse sites (heavy-shadow-DOM SPA, large data table, infinite-scroll feed).
 
+## [0.5.0] — 2026-06-17
+
+### Added — fidelity is behavior-first and two-directional (post-mortem from a real multi-feature parity miss)
+
+A "complete" audit still shipped several parity misses of recurring shapes: replicated controls that were non-functional shells (dead stubs); a gated action that ignored its entitlement check; an interactive control implemented from a guess instead of from observing the logged-in source; a missing toggle active-state indicator; a feature the source did not have, added speculatively; and a multi-level menu replicated only one level deep with a sample of its content. Root cause: audit completeness was treated as replication fidelity, and the harness-in-use copy had drifted to a behind fork lacking the Control Intent Ledger. New guidance + a copy reconciliation close the gap:
+
+- **New section "Fidelity Is Behavior-First And Two-Directional"** (right after Core Rule), four rules: (1) you cannot replicate what you did not observe — drive the logged-in product and trigger each interactive feature; static fetch / public pages / first-render DOM see no post-login client behavior; never guess; (2) capture full content + full depth, not a representative sample; (3) reverse-audit the replica against the source — both under-build (dead stubs) and over-build (phantom features the source lacks) are misses; (4) a front-end trigger is not done until its data + backend dependency are.
+- **Step 9 verification** gains a feature-by-feature reverse-audit gate: open replica + source, confirm each control exists-or-is-honestly-absent, behaves identically when *triggered*, contains the same full content, and is gated the same way.
+- **Common Misses** gains four scannable entries: guessed-not-observed behavior, phantom features, content-depth shortfall, dead stubs in the replica.
+- **Copy reconciliation**: the `.claude` (Claude Code) copy had drifted behind the `.codex` (0.4.3) copy; both are now realigned to the same 0.5.0 content + `references/parity-trap-ledger.md`.
+
 ## [0.4.3] — 2026-06-05
 
 ### Changed — generic implementation feedback lessons
