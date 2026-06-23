@@ -2,7 +2,7 @@
 name: website-replication-skill
 description: Audit a reference website or web app and produce a differentiated parity plan with page region relationships, PRD requirements, UI, interactions, API contracts, data model, and architecture. Use when benchmarking a competitor, replicating a legacy or partner site, matching product capabilities, reproducing workflow behavior with original branding, or auditing missing UI/function/API details.
 metadata:
-  version: 0.6.0
+  version: 0.7.0
 ---
 
 # Website Replication
@@ -234,6 +234,11 @@ Pick whatever is available; degrade gracefully and re-classify evidence accordin
 - Dead stubs in the replica: a tab / menu item / toggle that looks replicated but has no wiring or backend — wire it like the source or omit it.
 - Icon-only buttons with no behavior: clear, save, randomize, expand, copy, download, regenerate, share, more.
 - Static confirmation replacing a real interaction: a reference button that opens a picker, saved-item menu, folder selector, source chooser, restore dialog, or modal cannot be replicated by showing a text note or toast.
+- State-conditional control sets: a toolbar / header can show a *different set* of controls per field state — an empty field may expose one action (e.g. randomize) while a filled field reveals more (clear, save). Inventory the controls in BOTH empty and filled states; replicating only one ships buttons the source deliberately shows or hides by state.
+- Same action, same icon — and icons are observed, not guessed: one action reached from two surfaces (e.g. a saved-items picker opened from two different toolbars) must use a single shared icon; and an ambiguous glyph's meaning is learned by triggering it on the live product, never inferred from its shape. Divergent icons for one destination, or a guessed metaphor, read as unfinished.
+- Menu-item chrome, not just labels: a dropdown is more than its item text — replicate each item's leading icon, the applied / active highlight (options already present in the document shown in the accent color), the type scale (do not oversize dropdown text), and row height. A correct item list with the wrong per-item chrome or an oversized font still reads as off.
+- Responsive modal form-factor: one overlay often renders as a centered dialog on desktop and a bottom-sheet on mobile — capture and build both. A desktop-only centered modal shown on a phone is a parity miss.
+- Honest partial replication: when a replicated widget has a sub-part you cannot back with real data (e.g. the source's picker has three tabs but your product only has data for two), ship the supported subset and OMIT the rest — never render an always-empty tab / section that implies a capability you lack. This is the partial-widget form of the dead-stub rule: drop the unbacked part rather than shell it.
 - Auth-only probing: logged-out gates are not enough. If logged-in access is available, verify the authenticated behavior and current-state label for the same control.
 - Mode-specific omissions: Prompt / custom-content / upload / restore modes can have different controls, persistence, CTA states, and result routing; enumerate each mode after switching.
 - Menus that look right but do not model the product: ellipsis actions, nested downloads, remix / edit follow-ups, move-to dialogs, sort menus, filter menus, bulk menus, disabled destructive actions, and outside-click dismissal.

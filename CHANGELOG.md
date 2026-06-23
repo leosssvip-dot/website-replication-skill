@@ -11,6 +11,20 @@ Planned for the next milestones — not yet implemented:
 - A second real audit on a fully public site (no auth gating) to complement the Gemini anonymous-tier sample, demonstrating 100% coverage.
 - Stress-test the v0.3 scripts on diverse sites (heavy-shadow-DOM SPA, large data table, infinite-scroll feed).
 
+## [0.7.0] — 2026-06-23
+
+### Added — control-fidelity misses from a real logged-in UI replication pass
+
+Replicating a competitor's logged-in editor surface (driven over CDP) surfaced recurring shapes the audit-level rules did not name sharply enough. All added to **Common Misses To Prevent** (and mirrored into `SKILL.zh.md`); generic/desensitized — no site, product, or repo specifics:
+
+- **State-conditional control sets** — a toolbar's *set* of visible controls changes by field state (empty shows one action; filled reveals clear/save). Inventory controls in BOTH empty and filled states, not just the filled one.
+- **Same action, same icon — and icons are observed, not guessed** — one action reached from two surfaces must share a single icon; an ambiguous glyph's meaning is learned by triggering it live, never inferred from its shape.
+- **Menu-item chrome, not just labels** — replicate each item's leading icon, applied/active highlight (e.g. already-present options in the accent color), type scale (don't oversize dropdown text), and row height — not only the item text.
+- **Responsive modal form-factor** — one overlay often renders centered on desktop and as a bottom-sheet on mobile; capture and build both.
+- **Honest partial replication** — when a replicated widget has a sub-part you can't back with real data (source's picker has three tabs, you have data for two), ship the supported subset and OMIT the rest; never shell an always-empty tab/section. The partial-widget form of the dead-stub rule.
+
+No workflow-contract change (MINOR): only new guidance bullets + version bump. Validator (`scripts/validate-skill.mjs`) still passes.
+
 ## [0.6.0] — 2026-06-17
 
 ### Added — login handoff: pause and ask the user to authenticate, don't jump to `blocked`

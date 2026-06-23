@@ -155,6 +155,11 @@
 - 复刻品里的死 stub：看着复刻了的 tab / 菜单项 / 开关，却没接线没后端——要么照源站接上，要么不放。
 - icon-only 按钮无行为：clear、save、randomize、expand、copy、download、regenerate、share、more。
 - 菜单看起来像但产品逻辑没建模：ellipsis actions、nested downloads、remix / edit follow-up、move-to dialog、sort menu、filter menu、bulk menu、disabled destructive action、点击空白关闭。
+- 状态相关的控件集合：toolbar / header 在不同字段状态下显示的控件**集合**会变——空字段可能只有一个动作（如 randomize），有内容时才露出更多（clear、save）。要在**空态和有内容态都做控件清单**；只复刻一种，就会做出源站按状态显隐的常驻按钮。
+- 同一动作用同一 icon，且 icon 靠观察不靠猜：同一个动作从两处入口触发（如同一个「已保存项」选择器从两个 toolbar 打开）必须用同一个 icon；含义不明的图标要在源站亲手触发才知道它打开什么，绝不按形状臆测。同一目的地用了不同图标、或猜的隐喻，都像没做完。
+- 菜单项的「外观细节」不只是文字：下拉不止是项文字——每项的前置 icon、已应用 / 激活态高亮（文档里已存在的选项用强调色显示）、字号（下拉别用过大字体）、行高都要复刻。项列表对了但每项外观或字号不对，照样像没对齐。
+- 弹窗的响应式形态：同一个 overlay 常常桌面是居中对话框、移动端是底部抽屉（bottom-sheet）——两种都要抓、都要做。手机上还用桌面那套居中弹窗就是 parity miss。
+- 诚实的「部分复刻」：复刻的部件里有一块你没有真实数据支撑（如源站的选择器有三个 tab，你的产品只有两个 tab 的数据），那就只做有数据的子集、**删掉**其余——绝不放一个永远为空、暗示有该能力的 tab / 区块。这是死 stub 规则在「部件局部」上的形态：缺数据的那块直接删，别做空壳。
 - 隐藏状态变化：tab 选中、mode 切换、advanced 开关、上传 / 已选源状态、draft / restore。
 - 流程推进后的区域替换：有真实内容后 examples / showcase 可能消失，result panel 可能切成 task list、history、folder、queue 或 workspace。
 - 用户反馈：字数计数、已保存 / 已恢复提示、disabled 原因、validation 文案、空态、loading / progress、错误恢复。
