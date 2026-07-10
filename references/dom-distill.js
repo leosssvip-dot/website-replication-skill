@@ -12,19 +12,46 @@
 //   - you want a stable, diff-friendly artefact across re-runs.
 //
 // Output:
-//   - markdown nested list printed to console
-//   - stashed at window.__domDistill for paste into evidence
+//   - bounded markdown stashed at window.__domDistill
+//   - a small console summary (never the evidence body)
 //   - return value: { bytes, nodesEmitted, truncated, output }
+//
+// Free-form text and form values are omitted by default. Use a browser-native
+// accessibility snapshot for public copy when text is required.
+// For a scoped, known-public status region, evaluate this file, read the
+// returned `hookName`, and call:
+//   window[hookName]({ rootSelector: '#status', includeText: true });
 //
 // Side-effect-free: no clicks, no DOM mutations, no network.
 
-(function distill({
+(function installDistiller() {
+function distill({
   rootSelector = 'body',
   maxTextLen = 60,
   maxDepth = 10,
   maxNodes = 2000,
   collapseWrappers = true,
+  includeText = false,
+  maxOutputBytes = 50_000,
 } = {}) {
+  const HARD_OUTPUT_BYTES = 50_000;
+  function boundedInteger(value, fallback, minimum, maximum) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed)
+      ? Math.max(minimum, Math.min(maximum, Math.floor(parsed)))
+      : fallback;
+  }
+  maxTextLen = boundedInteger(maxTextLen, 60, 1, 200);
+  maxDepth = boundedInteger(maxDepth, 10, 1, 20);
+  maxNodes = boundedInteger(maxNodes, 2000, 1, 5000);
+  rootSelector = typeof rootSelector === 'string' && rootSelector.length <= 200
+    ? rootSelector
+    : 'body';
+  collapseWrappers = collapseWrappers !== false;
+  includeText = includeText === true;
+  maxOutputBytes = Number.isFinite(Number(maxOutputBytes))
+    ? Math.max(1_000, Math.min(HARD_OUTPUT_BYTES, Math.floor(Number(maxOutputBytes))))
+    : HARD_OUTPUT_BYTES;
   const DROP_TAGS = new Set([
     'script', 'style', 'noscript', 'meta', 'link', 'head',
     // SVG primitives — keep <svg> structure out of distill; icons rarely
@@ -39,7 +66,7 @@
     'aria-label', 'aria-disabled', 'aria-expanded', 'aria-haspopup',
     'aria-checked', 'aria-selected', 'aria-pressed', 'aria-current',
     'aria-describedby', 'aria-live',
-    'href', 'name', 'type', 'placeholder', 'value', 'disabled', 'tabindex',
+    'href', 'name', 'type', 'disabled', 'tabindex',
     'data-testid', 'data-test', 'data-test-id', 'data-cy',
     'for', 'alt', 'title', 'contenteditable',
   ];
@@ -55,12 +82,41 @@
   ]);
 
   let budget = maxNodes;
-  const root = document.querySelector(rootSelector) || document.body;
+  let root = document.body;
+  try {
+    root = document.querySelector(rootSelector) || document.body;
+  } catch (_) {}
 
   function truncate(s, n) {
-    s = String(s).replace(/\s+/g, ' ').trim();
+    s = sanitizeText(s).replace(/\s+/g, ' ').trim();
     if (s.length <= n) return s;
     return s.slice(0, n) + `…(+${s.length - n})`;
+  }
+
+  function sanitizeText(value) {
+    return String(value || '')
+      .replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g, '[redacted-email]')
+      .replace(/\b(token|session|auth|key)=([^\s&]+)/gi, '$1=[redacted]')
+      .replace(/\b[A-Za-z0-9_-]{24,}\b/g, '[redacted-token]')
+      .replace(/[|`]/g, '/')
+      .replace(/[\r\n]+/g, ' ')
+      .trim();
+  }
+
+  function redactPath(pathname) {
+    const sensitiveParent = /^(?:auth|callback|confirm|confirmation|invite|magic|oauth|password|redeem|reset|session|share|sso|token|verify)$/i;
+    const parts = String(pathname || '').split('/');
+    return parts.map((raw, index) => {
+      let decoded = raw;
+      let previous = parts[index - 1] || '';
+      try { decoded = decodeURIComponent(raw); } catch (_) {}
+      try { previous = decodeURIComponent(previous); } catch (_) {}
+      if (sensitiveParent.test(previous)) return '[redacted]';
+      if (/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/.test(decoded)) return '[redacted-email]';
+      if (/\b(?:token|session|auth|key)=/i.test(decoded)) return '[redacted]';
+      if (/\b[A-Za-z0-9_-]{24,}\b/.test(decoded)) return '[redacted-token]';
+      return sanitizeText(raw);
+    }).join('/');
   }
 
   function isHidden(el) {
@@ -80,15 +136,13 @@
     return false;
   }
 
-  function shortenUrl(v) {
-    if (v.length <= 80) return v;
+  function safeUrl(v) {
     try {
       const u = new URL(v, location.href);
-      const qs = u.search ? '?…' : '';
-      const candidate = `${u.origin}${u.pathname}${qs}`;
-      return candidate.length < v.length ? candidate : v.slice(0, 80) + '…';
+      const prefix = u.origin === location.origin ? '' : u.origin;
+      return sanitizeText(`${prefix}${redactPath(u.pathname)}`).slice(0, 120);
     } catch (_) {
-      return v.slice(0, 80) + '…';
+      return '(redacted-url)';
     }
   }
 
@@ -98,10 +152,12 @@
       let v = el.getAttribute(a);
       if (v === null) continue;
       v = String(v);
-      if (a === 'href' || a === 'src') {
-        v = shortenUrl(v);
+      if (a === 'href') {
+        v = safeUrl(v);
       } else if (v.length > 80) {
-        v = v.slice(0, 80) + '…';
+        v = sanitizeText(v).slice(0, 80) + '…';
+      } else {
+        v = sanitizeText(v);
       }
       out[a] = v;
     }
@@ -114,8 +170,11 @@
     if (depth > maxDepth) return null;
 
     if (node.nodeType === 3 /* TEXT_NODE */) {
+      if (!includeText || budget <= 0) return null;
       const t = truncate(node.textContent, maxTextLen);
-      return t ? { text: t } : null;
+      if (!t) return null;
+      budget--;
+      return { text: t };
     }
     if (node.nodeType !== 1 /* ELEMENT_NODE */) return null;
 
@@ -137,12 +196,14 @@
     // these are the framework noise that bloats raw HTML most.
     if (collapseWrappers && (tag === 'div' || tag === 'span') &&
         Object.keys(attrs).length === 0 && children.length === 1) {
+      budget++;
       return children[0];
     }
 
     // Drop empty leaves with neither attributes nor children, unless their
     // presence is structurally meaningful (headings, landmarks, inputs).
     if (children.length === 0 && Object.keys(attrs).length === 0 && !PRESENCE_MATTERS.has(tag)) {
+      budget++;
       return null;
     }
 
@@ -153,7 +214,7 @@
     const parts = [];
     for (const [k, v] of Object.entries(attrs)) {
       if (v === '' || v === 'true') parts.push(`[${k}]`);
-      else parts.push(`[${k}="${v.replace(/"/g, '\\"')}"]`);
+      else parts.push(`[${k}="${sanitizeText(v).replace(/]/g, '\\]').replace(/"/g, '\\"')}"]`);
     }
     return parts.join('');
   }
@@ -175,15 +236,91 @@
 
   const header = [
     `<!-- Generated by website-replication-skill/references/dom-distill.js -->`,
-    `<!-- ${new Date().toISOString()} · ${location.href} -->`,
+    `<!-- ${new Date().toISOString()} · ${safeUrl(location.href)} -->`,
     `<!-- ${nodesEmitted} nodes${truncated ? ` (TRUNCATED at maxNodes=${maxNodes})` : ''} · max depth ${maxDepth} -->`,
     '',
   ].join('\n');
 
   const body = tree ? serialize(tree, 0) : '(empty — nothing to distill)';
-  const out = header + body;
+  let out = header + body;
+  let byteTruncated = false;
+  const encoder = new TextEncoder();
+  if (encoder.encode(out).length > maxOutputBytes) {
+    const marker = '\n<!-- TRUNCATED: output exceeded the 50KB evidence limit -->';
+    let low = 0;
+    let high = out.length;
+    while (low < high) {
+      const mid = Math.ceil((low + high) / 2);
+      if (encoder.encode(out.slice(0, mid) + marker).length <= maxOutputBytes) low = mid;
+      else high = mid - 1;
+    }
+    out = out.slice(0, low).replace(/[^\n]*$/, '') + marker;
+    byteTruncated = true;
+  }
+  let bytes = encoder.encode(out).length;
+  let finalTruncated = truncated || byteTruncated;
+  function makeResult() {
+    return { bytes, nodesEmitted, truncated: finalTruncated, output: out };
+  }
+  let result = makeResult();
+  const hookReserve = { hookInstalled: true, hookName: 'x'.repeat(160) };
+  if (encoder.encode(JSON.stringify({ ...result, ...hookReserve })).length > HARD_OUTPUT_BYTES) {
+    const marker = '\n<!-- TRUNCATED: serialized evidence payload exceeded the 50KB limit -->';
+    let low = 0;
+    let high = out.length;
+    while (low < high) {
+      const mid = Math.ceil((low + high) / 2);
+      const candidate = out.slice(0, mid).replace(/[^\n]*$/, '') + marker;
+      const candidateResult = {
+        bytes: encoder.encode(candidate).length,
+        nodesEmitted,
+        truncated: true,
+        output: candidate,
+        ...hookReserve,
+      };
+      if (encoder.encode(JSON.stringify(candidateResult)).length <= HARD_OUTPUT_BYTES) low = mid;
+      else high = mid - 1;
+    }
+    out = out.slice(0, low).replace(/[^\n]*$/, '') + marker;
+    bytes = encoder.encode(out).length;
+    finalTruncated = true;
+    result = makeResult();
+  }
 
-  console.log(out);
+  console.log(`DOM distill ready: ${bytes} bytes · ${nodesEmitted} nodes${finalTruncated ? ' · TRUNCATED' : ''}`);
   window.__domDistill = out;
-  return { bytes: out.length, nodesEmitted, truncated, output: out };
+  window.__domDistillMeta = { bytes, nodesEmitted, truncated: finalTruncated };
+  return result;
+}
+
+let hookInstalled = false;
+let hookName = null;
+let nonce;
+try {
+  const words = new Uint32Array(3);
+  globalThis.crypto.getRandomValues(words);
+  nonce = Array.from(words, (word) => word.toString(36)).join('_');
+} catch (_) {
+  nonce = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+}
+for (let attempt = 0; attempt < 5 && !hookInstalled; attempt++) {
+  const candidate = `__websiteReplicationDistill_${nonce}_${attempt}`;
+  try {
+    const existing = Object.getOwnPropertyDescriptor(globalThis, candidate);
+    if (existing && !existing.configurable) continue;
+    Object.defineProperty(globalThis, candidate, {
+      value: distill,
+      writable: false,
+      configurable: false,
+      enumerable: false,
+    });
+    hookName = candidate;
+    hookInstalled = true;
+  } catch (_) {}
+}
+
+const initialResult = distill();
+initialResult.hookInstalled = hookInstalled;
+initialResult.hookName = hookName;
+return initialResult;
 })();

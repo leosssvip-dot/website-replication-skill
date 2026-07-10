@@ -18,6 +18,8 @@ Adapt section depth to the competitor's domain (SaaS / e-commerce / content / co
 
 Only include redacted evidence. Do not expose cookies, authorization headers, session IDs, tokens, customer data, uploaded contents, private messages, account identifiers, or one-time URLs.
 
+Keep the entire raw `audit/` tree ignored. A custom raw root must be outside Git or pass `git check-ignore -q -- <raw-root>` in its containing worktree before capture. Publish only a separately reviewed and sanitized copy outside the raw root.
+
 | Evidence | Path / URL | Source | Redaction | Notes |
 | --- | --- | --- | --- | --- |
 | Desktop screenshot |  | observed |  |  |
@@ -25,7 +27,7 @@ Only include redacted evidence. Do not expose cookies, authorization headers, se
 | Focused component screenshot |  | observed |  |  |
 | DOM / text dump |  | observed |  |  |
 | Network log / API trace |  | observed |  |  |
-| Interactive inventory | `evidence/interactive-inventory.md` | observed |  | DOM-enumerated, stable IDs |
+| Interactive inventory | `audit/<site-slug>/snapshots/<date>/<page>-inventory.md` | observed | raw/local | DOM-enumerated, stable IDs; any published copy is separately sanitized |
 
 ### Interaction Coverage
 
@@ -36,7 +38,7 @@ Only include redacted evidence. Do not expose cookies, authorization headers, se
 | Coverage | M / N (X%) |
 | Hidden-state passes completed | hover · keyboard · right-click · drag · scroll · input-edge · network · url-history · multi-window |
 
-Coverage below 90% without a `blocked` reason is **not acceptable** — list un-probed elements and the reason here before finalizing.
+The configured threshold is 90% by default. Implementation-ready output fails whenever coverage is below it, even when blockers are documented. Use documented blockers for a research/blocker report and list every un-probed element here.
 
 #### Reflection round
 
@@ -148,11 +150,11 @@ Rows below are *examples* of common interactions to consider. Replace with the a
 
 ### Control Intent Ledger
 
-Use this table for primary, secondary, icon-only, picker, saved-item, and result-routing controls. See [parity-trap-ledger.md](parity-trap-ledger.md). A control with missing intent, auth state, persistence, region effect, or verification evidence belongs in the gap list.
+Use this table for primary, secondary, icon-only, picker, saved-item, and result-routing controls. See [parity-trap-ledger.md](parity-trap-ledger.md). A control with missing intent, safety classification, authorization/rollback boundary, auth state, persistence, region effect, or verification evidence belongs in the gap list. Re-enumerate consequential confirmation UI: keep its opener observed, and record the final commit control as a separate `✗` / `blocked:` inventory row unless explicitly authorized in a safe test environment.
 
-| Control ID | Region | Visible Affordance | Observed Trigger | Complete Observed Outcome | Auth States | Persistence Class | Backend / API Mapping | Cross-Region Updates | Post-Submit / Result Effect | Target Requirement | Test / Browser Evidence | Remaining Gap |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| i000 | Z1 |  | click / hover / keyboard |  | logged-out / logged-in / quota / paid | local / session / account / workspace / shared |  |  |  |  |  |  |
+| Control ID | Region | Visible Affordance | Safety Class | Authorization / Rollback | Observed Trigger | Complete Observed Outcome | Auth States | Persistence Class | Backend / API Mapping | Cross-Region Updates | Post-Submit / Result Effect | Target Requirement | Test / Browser Evidence | Remaining Gap |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| i000 | Z1 |  | read-only / reversible / consequential |  | click / hover / keyboard |  | logged-out / logged-in / quota / paid | local / session / account / workspace / shared |  |  |  |  |  |  |
 
 | User Action | Source Region | Target Region | Competitor Result | Target Result | Status | Source | Confidence | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -309,7 +311,8 @@ Use [prd-template.md](prd-template.md) for the full PRD. The PRD is required for
 
 - [ ] Screenshot evidence captured for competitor and target.
 - [ ] Evidence is redacted; no secrets, private data, or one-time URLs.
-- [ ] Interactive inventory generated via DOM enumeration; coverage M / N ≥ 90% or gaps justified.
+- [ ] Raw evidence root is outside Git or ignored by its containing worktree; every published copy was separately reviewed and sanitized.
+- [ ] Interactive inventory generated without truncation; coverage M / N meets the configured threshold (90% by default).
 - [ ] All hidden-state passes completed or marked `not applicable` with reason.
 - [ ] Reflection round (3 likely-missed candidates) probed and recorded.
 - [ ] Page region relationship model completed with `Z*` IDs.

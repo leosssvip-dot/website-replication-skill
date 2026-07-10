@@ -40,6 +40,7 @@ Mark claim source: `observed`, `documented`, or `inferred`.
 
 ## Interaction Behavior
 
+- Controls are classified before probing. Consequential controls stop before commit unless the exact action, target, consequence, and safe test environment are explicit. Re-enumerate confirmation UI: the opener remains observed, while the final commit control is a separate `✗` / `blocked:` row.
 - Mode / tab switching and preserved-vs-discarded state between modes.
 - Helper actions: randomize, examples, suggestions, chips, builder panels, inline tools.
 - Text tools: clear, save, restore, copy, expand / fullscreen, insert, counters.
@@ -94,10 +95,10 @@ Mark claim source: `observed`, `documented`, or `inferred`.
 - Drag / drop / reorder, including cross-container moves.
 - Scroll-triggered: infinite scroll, lazy load, sticky elements, back-to-top, nested scroll containers.
 - Input edge cases: empty submit, max length, paste formatted, paste disallowed chars, IME composition, disabled-state attempts.
-- Network states: slow 3G skeletons, offline, 5xx, timeout — including recovery affordances.
+- Network states: slow 3G skeletons, offline, timeout, and 5xx via local interception or a documented test fixture — including recovery affordances; never replay live mutations to induce failure.
 - URL / history: deep link, refresh mid-flow, back / forward across modes, new-tab on list item.
 - Multi-window / cross-tab sync where state is shared (carts, drafts, notifications).
-- Coverage report present: `enumerated N · probed M · coverage M/N (X%)`; gaps under 90% justified.
+- Coverage report present: `enumerated N · probed M · coverage M/N (X%)`; no truncation, duplicate IDs, invalid threshold, below-threshold implementation-ready result, or unstructured blocker reason.
 - Reflection round: three "most likely missed" candidates probed and reported.
 
 ## API And Backend
@@ -119,9 +120,11 @@ Mark claim source: `observed`, `documented`, or `inferred`.
 
 ## Evidence Safety
 
+- The raw evidence root is outside Git or passes `git check-ignore -q -- <raw-root>` in its containing worktree; only a separately reviewed and sanitized copy outside it may be published.
 - Raw evidence excludes cookies, auth headers, session IDs, tokens, one-time URLs, account identifiers, customer data, uploaded contents, and private messages.
 - Network evidence uses auth class and redacted shapes instead of full headers or full payloads.
-- Paid / auth-only states that cannot be accessed safely are marked `blocked`.
+- Authentication is user-controlled through an approved existing browser connection, a fresh dedicated profile where the user logs in directly, or user-drives/agent-observes; profiles and credential/session/magic-link material are never transferred.
+- Paid/auth-only states that cannot be accessed safely, and consequential final actions lacking authorization or a safe test environment, are marked `blocked`.
 - Implementation recommendations distinguish facts from assumptions and include confidence.
 
 ## Architecture And Data

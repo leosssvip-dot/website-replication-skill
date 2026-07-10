@@ -1,20 +1,28 @@
 # Website Replication（中文导读）
 
-> 这份文件是 [SKILL.md](SKILL.md) 的人类阅读版镜像，覆盖 Workflow / Evidence Safety / Common Misses / Configuration / Troubleshooting 五段。**Agent 加载的是英文版 SKILL.md**，这里仅为使用方查阅方便。
+> 这份文件是 [SKILL.md](SKILL.md) 的人类阅读版导读，覆盖安全边界、Workflow、Evidence Safety、Configuration 与 Troubleshooting。**Agent 加载的是英文版 SKILL.md**，这里仅为使用方查阅方便。
 > 英文版有任何变更时，本文件同步更新；若两版冲突，以英文版为准。
+
+## 安全边界（Safety Boundary）
+
+- 只读观察可以直接进行；可逆状态变化必须记录原值、验证后恢复；外发消息、发布、删除、计费、权限、全量导出等后果性动作必须获得对**具体动作、具体目标和明确后果**的授权，并且已经确认**安全测试环境**。否则只观察确认界面并在最终提交前停止。
+- “时间紧”“把所有按钮点一遍”或“看起来是测试数据”都不构成后果性动作授权。不要为了覆盖率修改生产或客户数据。
+- 可以打开确认界面观察，但在最终提交动作前停下；最终结果标 `blocked: consequential action not authorized`，不能假装已经完整观察。
+- 每个确认界面都要重新枚举。最终提交控件必须有独立 inventory 行：`Probed = ✗`、`Result = blocked: consequential action not authorized`；不能因为看过外围确认 UI 就把它算作已 probe。
+- **绝不复制浏览器 profile。** 也不接收密码、cookie、Authorization header、token、session 导出、一次性链接或 magic link。
 
 ## 保真：行为优先 + 双向（Fidelity Is Behavior-First And Two-Directional）
 
 审计文档详尽 ≠ 复刻保真。下面四条是事后复盘的教训——每条都是「看着像做完了」却被人工抓出的真实漏点，优先级高于「渲染出来就算复刻」的惯性：
 
-- **没观察到的交互功能不准复刻，绝不猜。** 静态抓取、公开 / 落地 / 营销页、首屏 DOM 都看不到登录后的客户端交互：某个 *Share / 收藏 / More / 下载* 控件**到底干什么**、弹出什么对话框、展开什么级联、生成什么链接——`WebFetch` 和 HTML 快照一概看不到。要复刻任何交互 / 鉴权后的功能，**必须驱动登录态产品、亲手触发该功能**，抓真实的对话框 / 流程 / 结果。够不到就标 `blocked`、什么都不复刻——一个看似合理的猜测（「Share 就是复制个链接」）是最贵的漏，因为它看着像做完了、没人复核就上线。
+- **没观察到的交互功能不准复刻，绝不猜。** 静态抓取、公开 / 落地 / 营销页、首屏 DOM 都看不到登录后的客户端交互：某个 *Share / 收藏 / More / 下载* 控件**到底干什么**、弹出什么对话框、展开什么级联、生成什么链接——`WebFetch` 和 HTML 快照一概看不到。要复刻任何交互 / 鉴权后的功能，**必须驱动登录态产品、亲手触发该功能**，抓真实的对话框 / 流程 / 结果。鉴权状态够不到时先按下文让用户在其控制的浏览器中登录；仍不可达才标 `blocked`，不要猜隐藏行为。
 - **抓全量全深度——代表性样本就是内容缺口。** 多级「分类 → 子分类」级联、几十项，不是用几个顶层项就算复刻了。把每个菜单 / 级联 / 列表展开到最深一层，记录**每一级的每一项**。样本当成品，读起来像「做完了」。
 - **反查自己的复刻品 vs 源站——保真是双向的。** 审计覆盖的是**源站**，从不会 catch 你**自己 build** 错的东西。两个方向都真实：
   - **欠建（死 stub）：** 看着复刻了的控件——tab、kebab 菜单项、开关、副面板——但没接线、没后端。要么让它**和源站完全一致地工作**，要么干脆不放。绝不上线只是「看着像」的空壳。
   - **过建（幽灵功能）：** 源站**没有**的控件 / 功能，自己拍脑袋加的。只复刻存在的；源站没有的一律不加，发现就移除。
 - **前端触发器没连上数据和后端依赖就不算复刻完。** 详情 / 预览动作需其底层数据真的取到并存好；受限动作（授权、升级、导出、付费下载）需其权限 / 订阅 / 配额校验；分享动作需链接指向的公开页面真实存在。触发器连到空数据（置灰、空、死链 / 裸链）就是漏。逐功能追其数据 + 后端依赖，用真实数据在各状态下验证它能用——而不只是按钮渲染出来了。
 
-## 到达登录态——暂停并交给用户登录（Reaching Logged-In State）
+## 到达登录态——用户掌控鉴权（Reaching Logged-In State）
 
 最值得复刻的行为（对话框、受限动作、账号 / workspace 状态、提交后流程）通常都在**登录之后**。当某个 in-scope 状态需要鉴权而你够不到时，**不是**直接标 `blocked`，而是**暂停、请用户替你登录**，然后继续。用户用自己合法账号登录**不是绕过鉴权**，是到达该状态的正常方式。只有当用户拒绝、无法到达、或那是他没有的付费 / 私域层级时，才标 `blocked`。
 
@@ -23,36 +31,25 @@
 3. **继续抓取。** 驱动登录态会话、逐个触发功能、证据标 `observed`。按 *证据安全* 脱敏会话痕迹（cookies、token、账号 ID）。
 4. **兜底。** 用户无法 / 不愿交接，就把这些状态标 `blocked`，用公开文档补 `documented`，并显式标注由此带来的复刻风险——不要猜隐藏行为。
 
-交接方式（按 harness 与用户许可任选；都让用户掌控自己的凭证）：
+安全方式按优先级选择：
 
-- **用户已登录的浏览器 + CDP(首选)。** 用户已登录、开着远程调试端口；你 `connectOverCDP` 接上去驱动。浏览器不允许在**占用中的默认 profile** 上开调试，所以常见做法是：把用户的浏览器 profile 拷到临时目录、用调试端口启动那一份（带着现有登录态），连上、驱动、用完删临时副本。会话归用户，你看不到密码。
-- **把已认证会话交进一次性上下文。** 用户把一个已认证会话（一次性 magic link，或他自己签发的 session）灌进全新浏览器上下文。当机密处理——用完即弃，绝不持久化或打日志。
-- **用户操作、你观察。** 自动化够不到时，用户点流程、你截图 / 共享屏幕来抓。慢一点，但仍算 `observed`。
+1. 使用用户已经明确批准、且由浏览器连接器直接提供的登录态页面。
+2. 启动一个**全新的专用浏览器 profile**，由用户本人在其中登录；agent 不查看或转存凭证。
+3. 自动化无法接管时，由用户操作，agent 通过截图或共享画面观察。
+4. 以上方式都不可用时标 `blocked`，不要索取任何会话材料，也不要复制默认 profile。
 
 ## 证据安全（Evidence Safety）
 
 - 保存或上报证据前，脱敏一切机密与个人数据：cookies、Authorization 头、session ID、token、账号 ID、客户数据、上传文件内容、可能含私域内容的消息 / prompt 文本、一次性 URL。
 - Network trace 只记 method、route pattern、auth class、脱敏后的 payload 形状、response 形状、status code、error class。**不要**粘贴带凭证的原始 header 或完整私域 payload。
 - 尊重访问边界。需要付费 / 鉴权才能到达的状态若当前不可达，标 `blocked`，仅从可见证据或官方文档做推断。
-- 审计输出落在**使用方项目**目录下（不是 skill 仓库自己）。在使用方项目 `.gitignore` 加入下面这段，让截图与 MANIFEST 进 git，DOM / 网络 / 报告留本地：
+- 审计输出落在**使用方项目**目录下（不是 skill 仓库自己）。原始证据一律 fail-closed，在使用方项目 `.gitignore` 加入：
 
   ```gitignore
-  audit/**/*.html
-  audit/**/*.htm
-  audit/**/*.har
-  audit/**/*.har.gz
-  audit/**/*.json
-  audit/**/*.md
-  audit/**/*.txt
-  audit/**/*.log
-  audit/**/*.csv
-  !audit/**/MANIFEST.md
-  audit/**/network/
-  audit/**/dom/
-  audit/**/reports/
+  audit/
   ```
 
-  Commit 截图前必须肉眼审一遍 PII（用户名、邮箱、客户内容、内部 ID）。需要最严的隐私时，整段替换成一行 `audit/`。
+  抓取前先解析 raw evidence root：若在任一 Git worktree 内，必须通过 `git check-ignore -q -- <raw-root>`；自定义路径不通过就先把准确目录加入 ignore。位于 Git 外时记录其未跟踪状态。未经验证的自定义 root 不准抓取。只有人工逐项脱敏后的副本才复制到 raw root 之外。
 
 ## Workflow（九步）
 
@@ -87,16 +84,17 @@
    - implementation-ready audit 必须有 region relationship table，且至少有一个关系图或状态机。未知关系标 `inferred` 或 `blocked`，不要省略。
 
 4. **枚举并探测交互**
-   - **先枚举，再点击**。在浏览器自动化里跑 [references/dom-enumeration.js](references/dom-enumeration.js)（DevTools 控制台 eval 或 browser-MCP 的 eval 接口）。markdown 输出保存为 `audit/<site-slug>/snapshots/<date>/<page-slug>-inventory.md`，格式见 [references/inventory-template.md](references/inventory-template.md)。脚本已处理选择器优先级、shadow DOM 穿透、`cursor:pointer` 探测，**不要自己重新发明枚举逻辑**。
-   - 按 ID 逐行走 inventory。先把每行映射到 `Z*` 区域，再填 `Probed`（`✓` 点过 / `o` URL/属性观察 / `✗` 跳过）、`Result`（动作 + 结果 + 观察到的网络调用 + `observed` / `inferred` / `blocked` 标签）、`Notes`。跳过任何 ID 都必须在 `Result` 里写原因。
-   - **每个非平凡状态变化**（modal 打开、drawer 展开、mode 切换、submit 后）前后各跑一次 [references/dom-distill.js](references/dom-distill.js)，再用 [references/state-diff.js](references/state-diff.js) 比对：`node references/state-diff.js before.md after.md`。diff 输出填进 `Result` 列——取代散文描述，让"发生了什么"变成机械结果。
+   - **先枚举，再点击**。Eval [references/dom-enumeration.js](references/dom-enumeration.js)，必须确认返回 `hookInstalled: true`，把返回的 `hookName` 保存在页面外，并将 `result.output` 写入 `audit/<site-slug>/snapshots/<date>/<page-slug>-inventory.md`。脚本负责唯一 selector、shadow DOM 与 `cursor:pointer` 探测。
+   - 每个控件触发前先按 *安全边界* 分类。打开确认界面属于观察；提交后果性动作是另一道授权边界，不能为了覆盖率越过。
+   - 按 ID 逐行走 inventory。先把每行映射到 `Z*` 区域，再填 `Probed`（`✓` 点过 / `o` URL/属性观察 / `✗` 跳过）、`Result`（动作 + 结果 + 观察到的网络调用 + `observed` / `inferred` / `blocked` 标签）、`Notes`。跳过行必须写结构化原因：`blocked: <具体原因>`。
+   - **每个非平凡状态变化**（modal 打开、drawer 展开、mode 切换、submit 后）前后各跑一次 [references/dom-distill.js](references/dom-distill.js)，再用 [references/state-diff.js](references/state-diff.js) 比对：`node references/state-diff.js before.md after.md`。仅文本变化时，先确认返回 `hookInstalled: true`、读取 `hookName`，再对确认公开的状态区调用 `window[hookName]({ rootSelector: '#status', includeText: true })`；否则用截图 / a11y 证据。
    - 打开每一个 menu / submenu：kebab / ellipsis、action dropdown、filter、sort、bulk action、move / folder picker、download submenu、remix / edit follow-up menu。
    - 验证 popover 机制：点击空白关闭、Esc / close 行为（如存在）、disabled menu item、危险操作项、嵌套 submenu 位置、viewport 裁切、移动端位置。
    - icon-only 与看起来装饰性的控件都按"有功能"处理直到反证。save / clear / copy / expand / randomize / regenerate / share / more — 一个一个 probe。
    - 每条交互还要记：validation、disabled、loading、optimistic update、error、success 输出、submit 后动作、auth / permission 重定向、paywall / quota、移动端 sticky。
    - 有列表时必须 probe 选择与批量行为：row checkbox 位置、select-all、selected-count actions、bulk move / download / delete，以及 selection 如何与 filter / pagination 交互。
    - 全局控件要与 row 控件分开 probe：全局播放器、persistent action bar、sidebar、底部 CTA、floating helper、fixed footer 往往有独立状态，不能遮挡主 CTA、列表内容、分页或移动端底栏。
-   - 动态页面在每次重大状态变化（mode 切换、modal 打开、submit 后）后重跑枚举脚本。重跑前设置 `window.__websiteReplicationInventoryOptions = { startIndex: <下一个未使用的数字 ID> }`，避免追加行复用旧 ID；新行用 `<!-- After <state change> -->` 分隔追加。
+   - 每次重大状态变化后，用页面外保存的 `hookName` 调用 `window[hookName]({ startIndex: <下一个未使用的数字 ID> })`，把返回的 `result.output` 作为**完整状态表格**追加到 divider 下。不要相信页面改写的 hook 名，也不能手工删行。
 
 5. **探测隐藏状态**
 
@@ -108,13 +106,13 @@
    - **拖拽 / 重排**：试列表项、文件、卡片的重排；记录 reorder API 和跨容器移动。
    - **滚动触发**：滚到底（infinite scroll / lazy load / sticky CTA / "回到顶部"）；嵌套容器内滚动；移动端底栏出现规律。
    - **输入边界**：空提交 · 最大长度 · 粘贴富文本 · 粘贴非法字符 · 输入法组合态 · disabled 态尝试操作。
-   - **网络状态**：DevTools 限速到 slow 3G 看 skeleton / spinner；切 offline 看错误 UX；强制返回 5xx（"Network → Block" + replay）看恢复 affordance。
+   - **网络状态**：DevTools 限速到 slow 3G 看 skeleton / spinner；切 offline 看错误 UX。5xx 只能通过本地拦截或有文档的测试夹具模拟，绝不向线上生产服务重放 mutation 或注入故障。
    - **URL / 历史**：直接 deep-link 进某状态 · 在多个 mode 间 back / forward · 流程进行中 refresh · 列表项右键新标签。
    - **多窗口 / 跨标签**：购物车、草稿、通知等共享状态，开第二个标签看同步方向。
 
 6. **审计 API 与后端能力**
    - 抓观察到的网络调用：method、route pattern、headers / auth class、脱敏 payload 形状、response 形状、status code、error class。
-   - 把请求列表喂给 [references/network-cluster.js](references/network-cluster.js)：`node references/network-cluster.js requests.txt`。脚本按 `host + path-pattern + method` 聚类、自动泛化 ID / UUID / token、识别 RPC-batched 端点（`rpcids` 子键）、长轮询 / 实时通道 / 遥测主机。输出当 *Observed endpoints* 表初稿用，再人工校对每行。
+   - 把请求列表喂给 [references/network-cluster.js](references/network-cluster.js)：`node references/network-cluster.js requests.txt`。脚本按 `host + path-pattern + method` 聚类并脱敏动态路径，识别 RPC / polling / realtime / telemetry。输出硬限制 500 行 / 50KB；出现 `TRUNCATED` 必须拆分输入后再发布。
    - 读官方 / API / 集成文档。分清 `observed` / `documented` / `inferred`。
    - 把竞品 UI 字段映射到目标后端字段。**不主动重设计目标 API 契约**，除非用户明示。
    - 列出缺失：endpoint、第三方集成、auth / 权限、文件上传 / 存储、后台任务、异步完成（polling / webhook）、计费 / 配额、限流、持久化 / 历史。
@@ -130,9 +128,9 @@
    - list / workspace / collection 体验要显式建模容器和成员关系：folder / workspace / collection、item assignment、item feedback、filter、sort order、pagination、archived / deleted、history retrieval。
 
 8. **反思并核对覆盖率**（强制 gate，在 step 9 前）
-   - 对每份 per-page inventory 跑 [references/coverage.js](references/coverage.js)：`node references/coverage.js audit/<site>/snapshots/<date>/<page>-inventory.md [--threshold=90]`。脚本解析 `Probed` 列、统计 `✓` / `o` / `✗`、算覆盖率，**覆盖率 < 阈值且有 ✗ 行没写 `blocked` 理由时退出码 ≠ 0**。这是正式 gate，不靠 agent 自报数字。
+   - 对每份 per-page inventory 跑 [references/coverage.js](references/coverage.js)：`node references/coverage.js audit/<site>/snapshots/<date>/<page>-inventory.md [--threshold=90]`。脚本拒绝缺失 / 截断的枚举元数据、非法阈值和重复 ID；**只要覆盖率低于阈值，或未 probe 行缺少 `blocked: <具体原因>`，退出码都 ≠ 0**。阻塞项可以支持 research/blocker 报告，但不能让 implementation-ready gate 变绿。
    - 脚本退出码 ≠ 0 时，按它列出的 ID 回 step 4 补，不许进 step 9。
-   - 显式问自己：*"鉴于这个产品类型，我最可能漏掉的三件事是什么？"* 写下三个候选 — 常见盲点：submit 成功后状态、错误恢复路径、设置 / 偏好、history / undo、分享 / 导出、移动端专属 affordance、付费层暗示在免费层的可见线索 — 然后 probe 每一个，记录结果。
+   - 显式问：*"鉴于这个产品类型，我最可能漏掉的三件事是什么？"* 写下三个候选，逐项探测并记录结果。
    - 对照最终态的 DOM 复核 inventory。交互打开的新元素（modal 内容、drawer 内容、展开面板）必须枚举并 probe。
    - 复核 region model：每个主要区域都有 purpose、owned/consumed state、emitted events、Region Layout Constraints，并至少有一个 relationship 或明确的 `not applicable` 理由。
    - 把结果写进交付物的 *Interaction Coverage* 与 *Region Model Coverage* 段。**只有走完这一轮才能进 step 9**。
@@ -185,8 +183,8 @@
 | 旋钮 | 默认 | 何时覆盖 |
 | --- | --- | --- |
 | Cache window | 30 天 | 快速迭代 SPA / 周级发布产品降到 7 天；稳定企业工具升到 90 天。`--fresh` 关闭本次复用。 |
-| Coverage threshold | 90% | 高风险审计提到 100%。低于 90% 仅当未 probe 元素都有 `blocked` 理由列在 gap list。 |
-| Evidence 目录 | `./audit/<site-slug>/` | 用户给路径就用用户的。 |
+| Coverage threshold | 90% | 高风险审计提到 100%。仅 research-only 可降低并必须记录覆盖值；implementation-ready 只要低于所配置阈值就失败。 |
+| Evidence 目录 | `./audit/<site-slug>/` | 自定义路径只有在确认位于 Git 外或被所属 worktree 忽略后才能使用。 |
 | 差异化方向 | （必须明示或假设） | `workflow parity with original style` / `same features with target design system` / `research only`。 |
 | Viewport 集 | `desktop-1440`, `mobile-iphone14` | 产品面向 tablet / 大桌面 / 特定设备时增加。 |
 | 反思轮候选数 | 3 个 | 不熟悉的产品品类提到 5+。 |
@@ -200,13 +198,13 @@
 | `dom-enumeration.js` 在非平凡页面上返回 < 5 个元素 | SPA 渲染进 shadow DOM 或 iframe | 脚本会穿透 open shadow root；跨域 iframe 设计上不可达。同域 iframe 在其 context 里重跑；closed shadow root 不可达，标 `inferred`。 |
 | 命中缓存但活页面明显与旧截图不同 | 站点在 cache window 内改版了 | 该行强制 fresh；更新 `Last Captured`，MANIFEST 加备注"redesigned since <旧日期>"。 |
 | 网络面板对明显的远程动作没抓到请求 | 走 WebSocket / SSE / `navigator.sendBeacon` | DevTools 过滤切"All"不要"Fetch/XHR"；抓 WS frame；标 `observed (via WS)` 或 `observed (via beacon)`。 |
-| 需要登录态但没凭证 | 付费 / SSO / 私域 | parity matrix 标 `blocked`；不要绕 auth。用公开文档填 `documented` 行。 |
+| 需要登录态 | 行为在鉴权后 | 使用获批的现有浏览器连接，或让用户在全新专用 profile 里自行登录；绝不复制 profile 或接收凭证、cookie、token、session、一次性链接。不可达时标 `blocked`。 |
 | 第一次跑没有 `MANIFEST.md` | 正常，新站点 | 用 [references/manifest-template.md](references/manifest-template.md) 的表头新建，边截边追加。 |
-| 覆盖率低于 90% 且无 `blocked` 理由 | step 4 被跳过或赶工 | 回 step 4 把空着的 ID 补完；交付物先别发。 |
+| 覆盖率低于所配置阈值 | scope 尚未完整 | 回 step 4 补未探测 ID。即使每项都有 blocker，implementation-ready gate 仍失败；只能交 research/blocker 报告。 |
 | 反思轮（step 8）说不出具体漏什么 | Agent 在现有内容上饱和了 | 用 [references/parity-checklist.md](references/parity-checklist.md) 的"Hidden States And Coverage"段，挑前三个还没勾的项做。 |
 | region model 只有"左区 / 右区"但无关系 | Agent 只标了布局，没有标职责 | 改写成职责：input/config、output/result、history/restore、gating/auth，并补 ownership、dependencies、events、updates。 |
 | PRD 只是 gap list | 用了输出模板但没做 PRD handoff | 加载 [references/prd-template.md](references/prd-template.md)，把每个重要区域关系转成可测试需求。 |
-| 截图意外把 PII 进 git | 审脱敏漏了 | `git rm --cached <路径>` 撤掉、脱敏、重新 commit。长期换成单行 `audit/`。 |
+| 原始证据意外进 git | fail-closed 边界被绕过 | 停止跟踪原始文件，保持整段 `audit/` 忽略；只有单独复核和脱敏后的副本才能发布。 |
 
 ## Token Budget（避免 context 爆炸）
 
@@ -217,13 +215,13 @@
 | 1. `evaluate` 返 raw `outerHTML` | 单次 200KB–5MB HTML | **禁止**——存盘 + 引路径，绝不进 context |
 | 2. `get_page_text` / 长页 raw 文本 | docs / 条款 / changelog 50–200KB | 优先用浏览器 MCP a11y 快照，否则跑 [references/dom-distill.js](references/dom-distill.js) |
 | 3. 巨型列表 inventory 膨胀 | 1000+ 交互元素（数据表、kanban） | `dom-enumeration.js` 默认 limit=500，必要时降到 200 或 scope 到具体 `rootSelector` |
-| 4. 重枚举不 diff | 每次 state 变化全量重抓 | 设置 `window.__websiteReplicationInventoryOptions = { startIndex: <下一个未使用的数字 ID> }`，用 `<!-- After <state> -->` 分隔只追加**新行**，已记的不复述 |
+| 4. 重枚举输出过大 | 每次 state 变化都有完整表格 | 完整表格留在文件中并用新 `startIndex`；上下文只读 metadata、差异和计数，不粘贴重复表体。 |
 | 5. 多页面 audit 汇总 | 把 10 份 inventory 全读回 context | 流式按页处理；只持有路径和计数，不持有内容 |
 
-**硬规则**：单次 tool 输出 > 50KB 必须落盘 + 引路径，不许放进 context。
+**硬规则**：DOM helper、network cluster 与 coverage report 硬限制为 50KB；其它 tool 输出接近该边界就写入已忽略文件并只引路径。出现 `TRUNCATED` 就代表证据不完整，必须缩小 scope 后重跑。raw `outerHTML` 绝不进 context。
 
 Skill 本身已强制的保护：
 
-- `dom-enumeration.js`：limit=500 · `startIndex` 支持追加状态 inventory · 稳定 CSS-path fallback selector · label 60 字符截断 · 不返 outerHTML
-- `dom-distill.js`：maxNodes=2000 · maxDepth=10 · 剔除 script/style/SVG · 折叠 wrapper div · 文本 60 字符截断 · 属性 80 字符截断
+- `dom-enumeration.js`：硬上限 500 行 / 50KB · 报告可见与输出数量 · 截断时显式标记 · `startIndex` 支持追加状态 inventory · 不返 outerHTML
+- `dom-distill.js`：默认不返回自由文本或表单值 · 脱敏 token/email/URL query · maxNodes=2000 · maxDepth=10 · 50KB 硬上限
 - 截图与 DOM dump 都是文件产物，交付物只引路径

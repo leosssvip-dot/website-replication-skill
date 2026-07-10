@@ -24,11 +24,12 @@ Skip any section that does not apply and say so explicitly (e.g. `no backend in 
 | Interactive inventory |  | observed | DOM-enumerated, stable IDs |
 
 All evidence must be redacted: no cookies, auth headers, tokens, account IDs, customer data, private message contents, or one-time URLs.
+Keep the raw `audit/` tree ignored. A custom raw root must be outside Git or pass `git check-ignore -q -- <raw-root>` before capture. Publish only a separately reviewed and sanitized copy outside the raw root.
 
 ### Interaction Coverage
 
 - Interactive elements enumerated: __
-- Probed: __ / __ (target ≥ 90%, else list un-probed below with reason)
+- Probed: __ / __ (configured target: __%; below target means research/blocker output only)
 - Hidden-state passes done: hover · keyboard · right-click · drag · scroll · input-edge · network · url-history · multi-window
 - Reflection (3 likely-missed candidates + probe result):
   1. __ → __
@@ -87,6 +88,14 @@ List actual user actions in scope. Replace example rows; do not ship the templat
 | Post-submit / result |  |  |  |  | observed / inferred |  |
 | Gated state |  |  |  |  | observed / inferred |  |
 
+### Compact Control Intent Ledger
+
+Classify each control before probing. Consequential actions stop before the final commit unless the exact action, target, consequence, and safe test environment are explicit. Re-enumerate confirmation UI and record the final commit control as a separate `✗` / `blocked:` inventory row.
+
+| Control ID | Region | Safety Class | Observed Pre-Commit Result | Final Outcome | Persistence / Backend | Evidence | Remaining Gap |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| i000 | Z1 | read-only / reversible / consequential |  | observed / blocked: reason |  |  |  |
+
 ## 6. API / Backend Notes
 
 Skip the table and write `no backend work in scope` if research-only.
@@ -115,12 +124,14 @@ For quick audits, write only the requirements needed for the primary workflow.
 
 - [ ] Screenshots saved (desktop + mobile).
 - [ ] Evidence is redacted.
-- [ ] Interactive inventory generated; coverage ≥ 90% or gaps justified.
+- [ ] Raw evidence root is outside Git or ignored by its containing worktree; published copies were separately reviewed and sanitized.
+- [ ] Interactive inventory generated without truncation; coverage meets the configured threshold.
 - [ ] Hidden-state passes done or marked `not applicable`.
 - [ ] Reflection round (3 candidates) probed.
 - [ ] Region relationship snapshot includes `Z*` IDs, owned state, consumed state, emitted events, and updates.
 - [ ] Layout Constraints captured for major regions, including fixed / sticky / docked behavior and mobile transform.
 - [ ] Interaction matrix covers small / icon-only controls.
+- [ ] Compact Control Intent Ledger covers safety class, final outcome, persistence/backend mapping, evidence, and gaps.
 - [ ] API status separates observed / documented / inferred / blocked / missing.
 - [ ] PRD slice contains testable acceptance criteria.
 - [ ] Gap list splits "can implement now" vs "needs preparation".

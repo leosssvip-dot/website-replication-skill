@@ -6,10 +6,22 @@ All notable changes to this skill are recorded here. Versioning follows [SemVer]
 
 Planned for the next milestones — not yet implemented:
 
-- CI: markdown lint + link checker + SKILL.md frontmatter validator on PRs.
+- CI: markdown lint + link checker + existing validators on PRs.
 - Migration guide for skill-version bumps when the consumer project has a cached `MANIFEST.md`.
 - A second real audit on a fully public site (no auth gating) to complement the Gemini anonymous-tier sample, demonstrating 100% coverage.
 - Stress-test the v0.3 scripts on diverse sites (heavy-shadow-DOM SPA, large data table, infinite-scroll feed).
+
+## [1.0.0] — 2026-07-10
+
+### Hardened — authorization, evidence privacy, and honest coverage
+
+- Added a fail-closed safety boundary for consequential actions. Coverage probing may inspect confirmation UI, but it cannot send communications, publish, delete, change billing/permissions, export private data, or commit other side effects unless the exact action/target is authorized, consequences are confirmed, and a safe test environment exists. Production/customer data is never mutated merely to improve coverage.
+- Replaced browser-profile copying and session/magic-link handoff with user-controlled authentication: approved existing browser connection, a fresh dedicated profile where the user logs in directly, or user-drives/agent-observes.
+- Made raw `audit/` evidence ignored by default; publishing now requires a separately reviewed and sanitized copy outside that tree.
+- Hardened DOM helpers with unique selectors, full-text-before-truncation sanitization, sensitive value/query/one-time-path stripping, agent-controlled text opt-in, clamped traversal, hard 500-row and 50 KB ceilings, visible-versus-emitted counts, and explicit truncation markers.
+- Hardened coverage, state diff, and network clustering against invalid thresholds, duplicate IDs, unstructured blockers, reorder-only changes, WebSocket routes, secret-like path segments, and Markdown injection.
+- Expanded the validator to cover helper behavior, metadata schema, documentation safety contracts, and SKILL.md context size; moved troubleshooting detail into an on-demand reference.
+- Removed duplicate version fields from `agents/openai.yaml`; this changelog is the single release-history source.
 
 ## [0.7.0] — 2026-06-23
 
@@ -27,13 +39,15 @@ No workflow-contract change (MINOR): only new guidance bullets + version bump. V
 
 ## [0.6.0] — 2026-06-17
 
+> Security note: the handoff mechanics from this historical release were removed in 1.0.0. Profile copying and credential/session/magic-link transfer are prohibited.
+
 ### Added — login handoff: pause and ask the user to authenticate, don't jump to `blocked`
 
 The skill treated auth-gated state as a wall ("mark `blocked`"), with no design for the productive middle path that real replication needs: the behavior worth copying lives behind login, and the user can usually reach it with their own legitimate account. New section **"Reaching Logged-In State — Pause And Hand Off To The User"** (after the fidelity section):
 
 - When an in-scope state is auth-gated and unreachable, **pause and ask the user to log in for you**, then resume against their signed-in session. `blocked` is the fallback (user declines / can't reach / paid tier they lack), not the first move.
 - Procedure: batch the ask (one login covers many states) → pause and hand off (never ask for / type / store the user's password; the user authenticates, you observe) → resume + capture as `observed` with session artifacts redacted → fallback to `blocked` + `documented` + flagged parity risk.
-- Handoff mechanics, all keeping the user in control of their credentials: their signed-in browser over CDP (copy profile to a temp dir + debug port, since the in-use profile can't be debugged), a session handoff into a throwaway context (treated as a secret), or user-drives-you-observe.
+- Historical handoff mechanisms were documented in this release; profile copying and credential/session/magic-link transfer are superseded and prohibited from 1.0.0 onward.
 - The fidelity rule and the Troubleshooting "authenticated state" row now point here instead of going straight to `blocked`. Mirrored into `SKILL.zh.md`.
 
 ## [0.5.0] — 2026-06-17

@@ -10,12 +10,12 @@ Lives at `audit/<site-slug>/MANIFEST.md`. One row per unique `URL × Viewport ×
 
 ## Field conventions
 
-- **URL** — full URL with query string when meaningful. Strip session-bound query params (`?utm_*`, `?session=...`, one-time tokens).
+- **URL** — store origin + pathname by default and never store fragments. Include only explicitly allowlisted, stable, non-sensitive query keys after redaction; never persist session, token, account, email, customer, or one-time values.
 - **Viewport** — `desktop-<width>` or `mobile-<device>` (e.g. `desktop-1440`, `mobile-iphone14`, `tablet-ipad`). Match what the browser-MCP reports.
 - **Auth** — `anonymous` / `free` / `paid` / `admin` / `sso`. Match the auth class used in network evidence.
 - **Last Captured** — ISO date `YYYY-MM-DD`. Empty for `blocked` rows.
 - **Snapshot / DOM** — paths relative to `audit/<site-slug>/`. DOM dump is optional but strongly recommended. Empty for `blocked`.
-- **Notes** — free text: page version, "redesigned since <date>", "blocked: paid", "captured behind SSO", "iframe content excluded", etc.
+- **Notes** — brief operational context such as page version, `redesigned since <date>`, `blocked: paid`, or `iframe content excluded`. Exclude emails, account/customer identifiers, private route data, credentials, tokens, session artifacts, and one-time URLs.
 
 ## Lookup protocol (mandatory, Workflow step 1)
 

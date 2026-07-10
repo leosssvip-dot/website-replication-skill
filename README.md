@@ -54,6 +54,12 @@ Users are responsible for their own IP, ToS, jurisdiction, and ethics review. Tr
 
 The skill enforces **evidence redaction**: cookies, auth headers, tokens, customer data, private message contents, account identifiers, and one-time URLs must never be saved or shared in reports.
 
+### Operational Safety
+
+Read-only observation is allowed. Reversible test changes require recording the original state and restoring it. Sending communications, publishing, deleting, changing billing or permissions, and exporting private data are consequential actions: stop before the final commit unless the user explicitly authorized the exact action and target, confirmed the consequence, and provided a safe test environment. Re-enumerate confirmation UI and record the final commit control as a separate un-probed `blocked:` row. Deadlines, generic “click everything” requests, and disposable-looking data are not authorization.
+
+Authentication stays under the user's control. Use an approved connection to an already signed-in browser, a fresh dedicated profile where the user signs in directly, or user-drives/agent-observes. Never copy a browser profile or accept passwords, cookies, auth headers, tokens, session exports, one-time links, or magic links.
+
 ### Dependencies
 
 The skill replicates not just UI but **interactions** — buttons, tab switches, mode toggles, async results, error states. That requires a browser automation layer. The agent auto-detects whatever is available and degrades gracefully.
@@ -99,6 +105,7 @@ website-replication-skill/
 │   ├── inventory-template.md         # Interactive-inventory format
 │   ├── manifest-template.md          # Cross-audit snapshot index
 │   ├── parity-checklist.md           # Coverage self-check
+│   ├── troubleshooting.md            # Failure handling + output budgets
 │   ├── dom-enumeration.js            # Interactive-element enumerator (browser)
 │   ├── dom-distill.js                # Compact DOM outliner (browser)
 │   ├── design-tokens.js              # getComputedStyle token histogram (browser)
@@ -106,7 +113,8 @@ website-replication-skill/
 │   ├── network-cluster.js            # Cluster captured requests (Node)
 │   └── coverage.js                   # Coverage gate — non-zero exit (Node)
 ├── scripts/
-│   └── validate-skill.mjs            # Self-check: script syntax + template contracts
+│   ├── validate-skill.mjs            # Self-check: scripts + docs + metadata contracts
+│   └── validate-browser-helpers.mjs   # Fake-DOM privacy, selector, and size checks
 ├── examples/
 │   ├── sample-audit.md               # Fictional end-to-end walkthrough (no real data)
 │   └── sample-audit-gemini.md        # Real anonymous-tier audit (redacted)
@@ -183,7 +191,7 @@ If any are missing, the skill proceeds with explicit assumptions and marks unkno
 
 #### Default evidence directory
 
-Screenshots, DOM dumps, network logs, and the final report go under `./audit/<site-slug>/` unless you specify another path. Keep high-risk evidence ignored: commit only reviewed screenshots and `MANIFEST.md` when safe; ignore DOM, network, report, inventory, and distill markdown files.
+Screenshots, DOM dumps, network logs, inventories, manifests, and reports go under `./audit/<site-slug>/` by default. Before capture, prove the resolved raw root is outside Git or ignored by its containing worktree (`git check-ignore -q -- <raw-root>`). A custom path must pass the same check. Publish only a separately reviewed, sanitized copy outside the raw root.
 
 ### Claim taxonomy
 
@@ -192,7 +200,7 @@ Every claim in a report is tagged:
 - `observed` — directly seen via interaction or network capture.
 - `documented` — found in official API / product docs.
 - `inferred` — reasonable deduction from partial evidence.
-- `blocked` — would require paid / authenticated access that is unavailable.
+- `blocked` — unavailable paid/authenticated access, or a consequential final action that lacks explicit authorization or a safe test environment.
 - `not applicable` — does not apply to this competitor's product category.
 
 This is the single most important contract of the skill: do not let the agent silently flatten these into "facts".
@@ -201,7 +209,7 @@ This is the single most important contract of the skill: do not let the agent si
 
 Pull requests welcome, especially:
 
-- New product-category data-model examples for [output-template.md §7 Data Model](references/output-template.md#7-data-model).
+- New product-category data-model examples for [output-template.md §8 Data Model](references/output-template.md#8-data-model).
 - Real (fully redacted) sample audits under `examples/`.
 - Translations of SKILL.md / templates.
 
@@ -269,6 +277,12 @@ Please do **not** submit:
 
 skill 强制执行**证据脱敏**：cookies、auth headers、tokens、客户数据、私信内容、账号标识、一次性 URL 一律不得保存或写入报告。
 
+### 操作安全
+
+只读观察可以直接进行；可逆测试变化必须记录原值并恢复。外发消息、发布、删除、计费或权限变更、私域数据导出属于后果性动作：除非用户明确授权具体动作与目标、确认后果，并提供安全测试环境，否则必须在最终提交前停止。确认界面必须重新枚举，最终提交控件要单独记为未 probe 的 `blocked:` 行。时间紧、泛化的“全部点一遍”和看似一次性的测试数据都不是授权。
+
+鉴权始终由用户掌控：使用获批的已登录浏览器连接、由用户本人登录的全新专用 profile，或“用户操作、agent 观察”。绝不复制浏览器 profile，也不接收密码、cookie、auth header、token、session 导出、一次性链接或 magic link。
+
 ### 依赖
 
 本 skill 不只复刻 UI，还要复刻**交互** —— 按钮、tab 切换、mode toggle、异步结果、错误状态。这需要浏览器自动化能力。Agent 会自动检测当前可用工具并优雅降级。
@@ -314,6 +328,7 @@ website-replication-skill/
 │   ├── inventory-template.md         # 交互清单格式
 │   ├── manifest-template.md          # 跨次审计截图索引
 │   ├── parity-checklist.md           # 覆盖度自检清单
+│   ├── troubleshooting.md            # 故障处理与输出预算
 │   ├── dom-enumeration.js            # 交互元素枚举器（浏览器）
 │   ├── dom-distill.js                # DOM 结构精简器（浏览器）
 │   ├── design-tokens.js              # getComputedStyle 设计 token 直方图（浏览器）
@@ -321,7 +336,8 @@ website-replication-skill/
 │   ├── network-cluster.js            # 网络请求聚类（Node）
 │   └── coverage.js                   # 覆盖度 gate — 非零退出码（Node）
 ├── scripts/
-│   └── validate-skill.mjs            # 自检：脚本语法 + 模板契约
+│   ├── validate-skill.mjs            # 自检：脚本、文档与元数据契约
+│   └── validate-browser-helpers.mjs   # 假 DOM 隐私、选择器与体积检查
 ├── examples/
 │   ├── sample-audit.md               # 虚构端到端样例（无真实数据）
 │   └── sample-audit-gemini.md        # 真实匿名层审计（已脱敏）
@@ -398,7 +414,7 @@ Claude Code 与 OpenAI Codex 已实测可用；其它 harness 预期可用但未
 
 #### 默认证据目录
 
-截图、DOM、网络日志、最终报告写入 `./audit/<site-slug>/`，除非你指定其它路径。高风险证据必须忽略：只有确认脱敏后的截图与 `MANIFEST.md` 才适合提交；DOM、网络、报告、inventory、distill markdown 都应留在本地。
+截图、DOM、网络日志、inventory、manifest 与报告默认写入 `./audit/<site-slug>/`。抓取前必须确认 raw root 位于 Git 外，或在所属 worktree 中通过 `git check-ignore -q -- <raw-root>`；自定义路径也必须通过同一检查。发布时只复制独立复核、脱敏后的副本到 raw root 之外。
 
 ### Claim 分级体系
 
@@ -407,7 +423,7 @@ Claude Code 与 OpenAI Codex 已实测可用；其它 harness 预期可用但未
 - `observed` —— 通过交互或网络抓包直接看到的。
 - `documented` —— 官方 API / 产品文档里写明的。
 - `inferred` —— 从局部证据合理推断的。
-- `blocked` —— 需要付费 / 鉴权访问而当前不可达的。
+- `blocked` —— 付费 / 鉴权状态不可达，或后果性最终动作缺少明确授权或安全测试环境。
 - `not applicable` —— 该竞品品类不适用。
 
 这是 skill 最重要的契约：**不允许 agent 把它们偷偷合并为"事实"**。
@@ -416,7 +432,7 @@ Claude Code 与 OpenAI Codex 已实测可用；其它 harness 预期可用但未
 
 欢迎 PR，尤其是：
 
-- 给 [output-template.md §7 Data Model](references/output-template.md#7-data-model) 补新品类的数据模型样例。
+- 给 [output-template.md §8 Data Model](references/output-template.md#8-data-model) 补新品类的数据模型样例。
 - 在 `examples/` 下提交**完全脱敏**的真实审计样例。
 - SKILL.md / 模板的多语言翻译。
 
